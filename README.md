@@ -1,12 +1,6 @@
- # X Doc Scanner
+ # Doc Scanner
 
-**X Doc Scanner** is a powerful and intuitive document scanning application designed for Android devices using Jetpack Compose. This app enables users to scan, manage, and share documents effortlessly, leveraging cutting-edge technologies to provide a robust and user-friendly experience.
-
-
-## Screenshots
-
-![App Screenshot](https://raw.githubusercontent.com/manish7924/DocScan-MLKit/master/app/src/main/res/drawable/1.jpg)
-
+**Doc Scanner** is a powerful and intuitive document scanning application designed for Android devices using Jetpack Compose. This app enables users to scan, manage, and share documents effortlessly, leveraging cutting-edge technologies to provide a robust and user-friendly experience.
 
 ## Features
 
@@ -22,7 +16,7 @@
 
 ## Installation
 
-1. Download the latest Doc Scanner APK file from the [releases page](https://github.com/manish7924/DocScan-MLKit/releases).
+1. Download the latest Doc Scanner APK file from the [releases page](https://github.com/mXaln/doc-scanner/releases).
 2. Enable installation from unknown sources in your device settings.
 3. Open the downloaded APK file and follow the on-screen instructions to install.
 
@@ -54,7 +48,7 @@
 1. **Clone the repository:**
 
    ```sh
-   git clone https://manish7924/DocScan-MLKit.git
+   git clone https://github.com/mXaln/doc-scanner.git
 
 2. **Open the project in Android Studio:**
 
@@ -81,10 +75,8 @@ We welcome contributions from the community! If you'd like to contribute, please
 
 If you have any questions, suggestions, or feedback, please feel free to reach out:
 
-**Developer:** [Manish Chidar](https://manish7924.github.io/My-Portfolio/)
-
-
-**Email:** manishchidar79@gmail.com
+**Developer:** [WycliffeAssociates](https://wycliffeassociates.org/)
+**Email:** info@wycliffeassociates.org
 
 ## License
-This project is licensed under the MIT License. See the [LICENSE](https://github.com/manish7924/DocScan-MLKit/blob/main/LICENSE) for more details.
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/mXaln/doc-scanner/blob/main/LICENSE) for more details.
