@@ -2,6 +2,7 @@ package org.bibletranslationtools.docscanner.ui.screens.home.components
 
 import android.content.Intent
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,13 +16,17 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -29,26 +34,37 @@ import androidx.compose.ui.unit.dp
 import org.bibletranslationtools.docscanner.R
 import org.bibletranslationtools.docscanner.data.models.PdfEntity
 import org.bibletranslationtools.docscanner.ui.viewmodel.PdfViewModel
+import org.bibletranslationtools.docscanner.utils.deleteFile
 import org.bibletranslationtools.docscanner.utils.getFileUri
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PdfLayout(pdfEntity: PdfEntity, pdfViewModel: PdfViewModel) {
+fun PdfLayout(
+    pdfEntity: PdfEntity,
+    pdfViewModel: PdfViewModel,
+    isExpanded: Boolean,
+    onMoreClick: () -> Unit,
+    onDismissRequest: () -> Unit
+) {
     val context = LocalContext.current
     val activity = LocalActivity.current
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .padding(12.dp), onClick = {
+            .padding(12.dp),
+        onClick = {
             val getFileUri = getFileUri(context, pdfEntity.name)
             val browserIntent = Intent(Intent.ACTION_VIEW, getFileUri)
             browserIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
             activity?.startActivity(browserIntent)
-        }) {
+        }
+    ) {
         Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(12.dp)
@@ -84,17 +100,89 @@ fun PdfLayout(pdfEntity: PdfEntity, pdfViewModel: PdfViewModel) {
                 Text(
                     text = "Size: ${pdfEntity.size}", style = MaterialTheme.typography.bodySmall
                 )
-
-
             }
-            IconButton(onClick = {
-                pdfViewModel.currentPdfEntity = pdfEntity
-                pdfViewModel.showRenameDialog = true
-            }) {
-                Icon(imageVector = Icons.Default.MoreVert, contentDescription = "more")
+            Box {
+                IconButton(
+                    onClick = {
+                        pdfViewModel.currentPdfEntity = pdfEntity
+                        onMoreClick()
+                    }
+                ) {
+                    Icon(imageVector = Icons.Default.MoreVert, contentDescription = "more")
+                }
+
+                DropdownMenu(
+                    expanded = isExpanded,
+                    onDismissRequest = onDismissRequest
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Upload") },
+                        leadingIcon = {
+                            Icon(
+                                painterResource(id = R.drawable.upload),
+                                contentDescription = null
+                            )
+                        },
+                        onClick = {
+                            onDismissRequest()
+                        }
+                    )
+
+                    DropdownMenuItem(
+                        text = { Text("Share") },
+                        leadingIcon = {
+                            Icon(
+                                painterResource(id = R.drawable.share),
+                                contentDescription = null
+                            )
+                        },
+                        onClick = {
+                            pdfViewModel.currentPdfEntity?.let {
+                                val getFileUri = getFileUri(context, it.name)
+                                val shareIntent = Intent(Intent.ACTION_SEND)
+                                shareIntent.type = "application/pdf"
+                                shareIntent.putExtra(Intent.EXTRA_STREAM, getFileUri)
+                                shareIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                context.startActivity(Intent.createChooser(shareIntent, "share"))
+                            }
+                            onDismissRequest()
+                        }
+                    )
+
+                    DropdownMenuItem(
+                        text = { Text("Rename") },
+                        leadingIcon = {
+                            Icon(
+                                painterResource(id = R.drawable.rename),
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = {
+                            pdfViewModel.showRenameDialog = true
+                            onDismissRequest()
+                        }
+                    )
+
+                    DropdownMenuItem(
+                        text = { Text("Delete") },
+                        leadingIcon = {
+                            Icon(
+                                painterResource(id = R.drawable.delete),
+                                contentDescription = null,
+                                tint = Color.Red
+                            )
+                        },
+                        onClick = {
+                            pdfViewModel.currentPdfEntity?.let {
+                                if (deleteFile(context, it.name)) {
+                                    pdfViewModel.deletePdf(it)
+                                }
+                            }
+                            onDismissRequest()
+                        }
+                    )
+                }
             }
         }
-
-
     }
 }

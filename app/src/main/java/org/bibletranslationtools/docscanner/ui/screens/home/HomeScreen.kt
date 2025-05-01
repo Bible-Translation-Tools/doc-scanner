@@ -21,7 +21,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -36,7 +38,7 @@ import org.bibletranslationtools.docscanner.data.models.PdfEntity
 import org.bibletranslationtools.docscanner.ui.screens.common.ErrorScreen
 import org.bibletranslationtools.docscanner.ui.screens.common.LoadingDialog
 import org.bibletranslationtools.docscanner.ui.screens.home.components.PdfLayout
-import org.bibletranslationtools.docscanner.ui.screens.home.components.RenameDeleteDialog
+import org.bibletranslationtools.docscanner.ui.screens.home.components.RenameDialog
 import org.bibletranslationtools.docscanner.ui.viewmodel.PdfViewModel
 import org.bibletranslationtools.docscanner.utils.copyPdfFileToAppDirectory
 import org.bibletranslationtools.docscanner.utils.getFileSize
@@ -53,12 +55,13 @@ fun HomeScreen(pdfViewModel: PdfViewModel) {
     // loading dialog
     LoadingDialog(pdfViewModel = pdfViewModel)
     // Rename Dialog
-    RenameDeleteDialog(pdfViewModel = pdfViewModel)
+    RenameDialog(pdfViewModel = pdfViewModel)
     // for activity
     val activity = LocalActivity.current
     val context = LocalContext.current
 
     val pdfList by pdfViewModel.pdfStateFlow.collectAsState()
+    var expandedItemId by remember { mutableStateOf<String?>(null) }
 
 //    val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
 
@@ -143,7 +146,6 @@ fun HomeScreen(pdfViewModel: PdfViewModel) {
 
         if (pdfList.isEmpty()) {
             ErrorScreen(message = "No Pdf found")
-
         } else {
             LazyColumn(
                 modifier = Modifier
@@ -153,10 +155,19 @@ fun HomeScreen(pdfViewModel: PdfViewModel) {
                 items(items = pdfList, key = { pdfEntity ->
                     pdfEntity.id
                 }) { pdfEntity ->
-                    PdfLayout(pdfEntity = pdfEntity, pdfViewModel = pdfViewModel)
+                    PdfLayout(
+                        pdfEntity = pdfEntity,
+                        pdfViewModel = pdfViewModel,
+                        isExpanded = expandedItemId == pdfEntity.id,
+                        onMoreClick = {
+                            expandedItemId = if (expandedItemId != pdfEntity.id) {
+                                pdfEntity.id
+                            } else null
+                        },
+                        onDismissRequest = { expandedItemId = null }
+                    )
                 }
             }
         }
-
     }
 }
