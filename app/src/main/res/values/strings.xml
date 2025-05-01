@@ -5,4 +5,8 @@
     <string name="pdf_name">Pdf Name</string>
     <string name="cancel">Cancel</string>
     <string name="ok">OK</string>
+    <string name="delete">Delete</string>
+    <string name="upload">Upload</string>
+    <string name="share">Share</string>
+    <string name="rename">Rename</string>
 </resources>

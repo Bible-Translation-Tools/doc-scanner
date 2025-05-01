@@ -17,19 +17,19 @@ import org.bibletranslationtools.docscanner.data.models.PdfEntity
 @TypeConverters(DateTypeConverter::class)
 //abstract class
 abstract class PdfDatabase : RoomDatabase() {
-//    dao
-    abstract val pdfDao : PdfDao
+    //    dao
+    abstract val pdfDao: PdfDao
 
-    companion object{
+    companion object {
 
         @Volatile
-        private var INSTANCE : PdfDatabase? = null
+        private var INSTANCE: PdfDatabase? = null
 
         fun getInstance(context: Context): PdfDatabase {
-            synchronized(this){
+            synchronized(this) {
                 return INSTANCE ?: Room.databaseBuilder(
-                  context.applicationContext,
-                  PdfDatabase::class.java,
+                    context.applicationContext,
+                    PdfDatabase::class.java,
                     "pdf_db"
                 ).build().also {
                     INSTANCE = it

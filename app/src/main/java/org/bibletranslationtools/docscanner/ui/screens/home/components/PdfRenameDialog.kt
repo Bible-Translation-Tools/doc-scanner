@@ -19,77 +19,56 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import org.bibletranslationtools.docscanner.R
-import org.bibletranslationtools.docscanner.ui.viewmodel.PdfViewModel
-import org.bibletranslationtools.docscanner.utils.renameFile
-import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RenameDialog(pdfViewModel: PdfViewModel) {
-
-    var newNameText by remember(pdfViewModel.currentPdfEntity) {
-        mutableStateOf(pdfViewModel.currentPdfEntity?.name ?: "")
+fun RenameDialog(
+    name: String,
+    onRename: (String) -> Unit,
+    onDismissRequest: () -> Unit,
+) {
+    var newNameText by remember(name) {
+        mutableStateOf(name)
     }
-    val context = LocalContext.current
-    if (pdfViewModel.showRenameDialog) {
-        Dialog(onDismissRequest = {
-            pdfViewModel.showRenameDialog = false
-        }) {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surface
+
+    Dialog(onDismissRequest = onDismissRequest) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        stringResource(R.string.rename_pdf),
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = newNameText,
-                        onValueChange = { newText -> newNameText = newText },
+                Text(
+                    stringResource(R.string.rename_pdf),
+                    style = MaterialTheme.typography.headlineSmall
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = newNameText,
+                    onValueChange = { newText -> newNameText = newText },
 
-                        label = { Text(stringResource(R.string.pdf_name)) })
-                    Spacer(modifier = Modifier.height(9.dp))
-                    Row {
-                        Spacer(Modifier.width(0.dp))
+                    label = { Text(stringResource(R.string.pdf_name)) })
+                Spacer(modifier = Modifier.height(9.dp))
+                Row {
+                    Spacer(Modifier.width(0.dp))
 
-                        Button(onClick = {
-                            pdfViewModel.showRenameDialog = false
-                        }) {
-                            Text(stringResource(R.string.cancel))
-                        }
+                    Button(onClick = onDismissRequest) {
+                        Text(stringResource(R.string.cancel))
+                    }
 
-                        Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.width(6.dp))
 
-                        Button(onClick = {
-                            pdfViewModel.currentPdfEntity?.let { pdf ->
-                                if (!pdf.name.equals(newNameText, true)) {
-                                    pdfViewModel.showRenameDialog = false
-                                    renameFile(
-                                        context,
-                                        pdf.name,
-                                        newNameText
-                                    )
-                                    val updatePdf = pdf.copy(
-                                        name = newNameText, lastModifiedTime = Date()
-                                    )
-                                    pdfViewModel.updatePdf(updatePdf)
-                                } else {
-                                    pdfViewModel.showRenameDialog = false
-                                }
-                            }
-                        }) {
-                            Text(stringResource(R.string.ok))
-                        }
+                    Button(onClick = {
+                        onRename(newNameText)
+                        onDismissRequest()
+                    }) {
+                        Text(stringResource(R.string.ok))
                     }
                 }
             }

@@ -1,42 +1,35 @@
 package org.bibletranslationtools.docscanner.ui.viewmodel
 
-import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
+import org.bibletranslationtools.docscanner.FileUtilities
+import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
 import org.bibletranslationtools.docscanner.data.models.PdfEntity
 import org.bibletranslationtools.docscanner.data.repository.PdfRepository
+import java.util.Date
 
-class PdfViewModel(application: Application) : ViewModel() {
+class PdfViewModel(
+    private val directoryProvider: DirectoryProvider,
+    private val pdfRepository: PdfRepository
+) : ScreenModel {
 
-    var isSplashScreen by mutableStateOf(false)
-    var showRenameDialog by mutableStateOf(false)
     var loadingDialog by mutableStateOf(false)
-
-    private val pdfRepository = PdfRepository(application)
 
     private val _pdfStateFlow = MutableStateFlow<List<PdfEntity>>(arrayListOf())
 
     val pdfStateFlow: StateFlow<List<PdfEntity>>
         get() = _pdfStateFlow
 
-    var currentPdfEntity: PdfEntity? by mutableStateOf(null)
-
     init {
-        viewModelScope.launch {
-            delay(2000)
-            isSplashScreen = false
-        }
-
-        viewModelScope.launch(Dispatchers.IO) {
+        screenModelScope.launch(Dispatchers.IO) {
             pdfRepository.getPdfList().catch {
                 it.printStackTrace()
             }.collect {
@@ -46,21 +39,43 @@ class PdfViewModel(application: Application) : ViewModel() {
     }
 
     fun insertPdf(pdfEntity: PdfEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val result = pdfRepository.insertPdf(pdfEntity)
+        screenModelScope.launch(Dispatchers.IO) {
+            pdfRepository.insertPdf(pdfEntity)
         }
+    }
+
+    fun uploadPdf(pdfEntity: PdfEntity) {
+        println("upload")
     }
 
     fun deletePdf(pdfEntity: PdfEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val result = pdfRepository.deletePdf(pdfEntity)
+        screenModelScope.launch(Dispatchers.IO) {
+            if (FileUtilities.deleteFile(directoryProvider, pdfEntity.name)) {
+                pdfRepository.deletePdf(pdfEntity)
+            }
         }
     }
 
-    fun updatePdf(pdfEntity: PdfEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val result = pdfRepository.updatePdf(pdfEntity)
+    fun renamePdf(pdfEntity: PdfEntity, newName: String) {
+        screenModelScope.launch(Dispatchers.IO) {
+            if (!pdfEntity.name.equals(newName, true)) {
+                FileUtilities.renameFile(
+                    directoryProvider,
+                    pdfEntity.name,
+                    newName
+                )
+                val updatePdf = pdfEntity.copy(
+                    name = newName,
+                    lastModifiedTime = Date()
+                )
+                updatePdf(updatePdf)
+            }
         }
     }
 
+    private fun updatePdf(pdfEntity: PdfEntity) {
+        screenModelScope.launch(Dispatchers.IO) {
+            pdfRepository.updatePdf(pdfEntity)
+        }
+    }
 }
