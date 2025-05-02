@@ -48,7 +48,7 @@
 1. **Clone the repository:**
 
    ```sh
-   git clone https://github.com/mXaln/doc-scanner.git
+   git clone https://github.com/Bible-Translation-Tools/doc-scanner.git
 
 2. **Open the project in Android Studio:**
 
