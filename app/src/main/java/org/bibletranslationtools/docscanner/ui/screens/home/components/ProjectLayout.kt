@@ -12,10 +12,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.LibraryBooks
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DriveFileRenameOutline
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -32,18 +33,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.bibletranslationtools.docscanner.R
-import org.bibletranslationtools.docscanner.data.models.Pdf
-import java.text.SimpleDateFormat
-import java.util.Locale
+import org.bibletranslationtools.docscanner.data.models.Project
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PdfLayout(
-    pdf: Pdf,
+fun ProjectLayout(
+    project: Project,
     menuShown: Boolean,
     onCardClick: () -> Unit,
     onMoreClick: () -> Unit,
-    onRenameClick: () -> Unit,
+    onUploadClick: () -> Unit,
+    onShareClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onDismissRequest: () -> Unit
 ) {
@@ -62,7 +62,7 @@ fun PdfLayout(
         ) {
             Icon(
                 modifier = Modifier.size(64.dp),
-                imageVector = Icons.Default.PictureAsPdf,
+                imageVector = Icons.AutoMirrored.Filled.LibraryBooks,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -72,24 +72,10 @@ fun PdfLayout(
             ) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = pdf.name,
+                    text = "${project.language}_${project.book}",
                     style = MaterialTheme.typography.bodyLarge,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(7.7.dp))
-
-                Text(
-                    text = "Date: ${
-                        SimpleDateFormat(
-                            "dd-MMM-yyyy HH:mm:ss", Locale.getDefault()
-                        ).format(pdf.lastModified)
-                    }", style = MaterialTheme.typography.bodySmall
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = "Size: ${pdf.size}", style = MaterialTheme.typography.bodySmall
                 )
             }
             Box {
@@ -102,16 +88,30 @@ fun PdfLayout(
                     onDismissRequest = onDismissRequest
                 ) {
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.rename)) },
+                        text = { Text("Upload") },
                         leadingIcon = {
                             Icon(
-                                Icons.Default.DriveFileRenameOutline,
-                                contentDescription = null,
+                                imageVector = Icons.Default.CloudUpload,
+                                contentDescription = null
                             )
                         },
                         onClick = {
                             onDismissRequest()
-                            onRenameClick()
+                            onUploadClick()
+                        }
+                    )
+
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.share)) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = null
+                            )
+                        },
+                        onClick = {
+                            onDismissRequest()
+                            onShareClick()
                         }
                     )
 
@@ -119,7 +119,7 @@ fun PdfLayout(
                         text = { Text(stringResource(R.string.delete)) },
                         leadingIcon = {
                             Icon(
-                                Icons.Default.Delete,
+                                imageVector = Icons.Default.Delete,
                                 contentDescription = null,
                                 tint = Color.Red
                             )

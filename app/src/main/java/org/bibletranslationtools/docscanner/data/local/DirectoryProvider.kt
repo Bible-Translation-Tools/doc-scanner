@@ -1,7 +1,9 @@
 package org.bibletranslationtools.docscanner.data.local
 
 import android.content.Context
-import org.bibletranslationtools.docscanner.FileUtilities
+import com.jcraft.jsch.JSch
+import com.jcraft.jsch.KeyPair
+import org.bibletranslationtools.docscanner.utils.identificator
 import java.io.File
 
 interface DirectoryProvider {
@@ -28,9 +30,35 @@ interface DirectoryProvider {
     val cacheDir: File
 
     /**
-     * Returns the path to the documents directory.
+     * Returns the path to the projects directory.
      */
-    val documentsDir: File
+    val projectsDir: File
+
+    /**
+     * Returns the directory in which the ssh keys are stored
+     */
+    val sshKeysDir: File
+
+    /**
+     * Returns the public key file
+     */
+    val publicKey: File
+
+    /**
+     * Returns the private key file
+     */
+    val privateKey: File
+
+    /**
+     * Checks if the ssh keys have already been generated
+     * @return Boolean
+     */
+    fun hasSSHKeys(): Boolean
+
+    /**
+     * Generates a new RSA key pair for use with ssh
+     */
+    fun generateSSHKeys()
 
     /**
      * Creates a temporary directory in the cache directory.
@@ -67,12 +95,45 @@ class DirectoryProviderImpl (private val context: Context) : DirectoryProvider {
     override val cacheDir: File
         get() = context.cacheDir
 
-    override val documentsDir: File
+    override val projectsDir: File
         get() {
-            val path = File(externalAppDir, "documents")
+            val path = File(externalAppDir, "projects")
             if (!path.exists()) path.mkdirs()
             return path
         }
+
+    override val sshKeysDir: File
+        get() = run {
+            val dir = File(internalAppDir, "ssh")
+            if (!dir.exists()) dir.mkdirs()
+            dir
+        }
+
+    override val publicKey: File
+        get() = File(sshKeysDir, "id_rsa.pub")
+
+    override val privateKey: File
+        get() = File(sshKeysDir, "id_rsa")
+
+    override fun hasSSHKeys(): Boolean {
+        return privateKey.exists() && publicKey.exists()
+    }
+
+    override fun generateSSHKeys() {
+        val jsch = JSch()
+        val type = KeyPair.RSA
+
+        try {
+            val keyPair = KeyPair.genKeyPair(jsch, type)
+            File(privateKey.absolutePath).createNewFile()
+            keyPair.writePrivateKey(privateKey.absolutePath)
+            File(publicKey.absolutePath).createNewFile()
+            keyPair.writePublicKey(publicKey.absolutePath, identificator())
+            keyPair.dispose()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     override fun createTempDir(name: String?): File {
         val tempName = name ?: System.currentTimeMillis().toString()
@@ -87,7 +148,7 @@ class DirectoryProviderImpl (private val context: Context) : DirectoryProvider {
 
     override fun clearCache() {
         cacheDir.listFiles()?.forEach {
-            FileUtilities.deleteRecursive(it)
+            it.deleteRecursively()
         }
     }
 }

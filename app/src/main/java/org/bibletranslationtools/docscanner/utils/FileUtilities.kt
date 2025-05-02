@@ -1,4 +1,4 @@
-package org.bibletranslationtools.docscanner
+package org.bibletranslationtools.docscanner.utils
 
 import android.annotation.SuppressLint
 import android.content.ContentResolver
@@ -8,6 +8,8 @@ import androidx.core.content.FileProvider
 import androidx.core.net.toFile
 import androidx.documentfile.provider.DocumentFile
 import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
+import org.bibletranslationtools.docscanner.data.models.Project
+import org.bibletranslationtools.docscanner.data.models.getName
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileFilter
@@ -279,21 +281,13 @@ object FileUtilities {
         }
     }
 
-    /**
-     * Recursively deletes a directory or just deletes the file
-     * @param fileOrDirectory
-     */
-    fun deleteRecursive(fileOrDirectory: File) {
-        if (fileOrDirectory.isDirectory) {
-            for (child in fileOrDirectory.listFiles()) {
-                deleteRecursive(child)
-            }
-        }
-        fileOrDirectory.delete()
-    }
-
-    fun getFileSize(directoryProvider: DirectoryProvider, fileName: String): String {
-        val file = File(directoryProvider.documentsDir, fileName)
+    fun getFileSize(
+        directoryProvider: DirectoryProvider,
+        fileName: String,
+        project: Project
+    ): String {
+        val projectDir = File(directoryProvider.projectsDir, project.getName())
+        val file = File(projectDir, fileName)
         val fileSizeBytes = file.length()
         val fileSizeKB = fileSizeBytes / 1024
         return if (fileSizeKB > 1024) {
@@ -309,36 +303,52 @@ object FileUtilities {
         context: Context,
         directoryProvider: DirectoryProvider,
         pdfUri: Uri,
-        destinationFileName: String
+        destinationFileName: String,
+        project: Project
     ) {
         val inputStream = context.contentResolver.openInputStream(pdfUri)
-        val outputFile = File(directoryProvider.documentsDir, destinationFileName)
+        val projectDir = File(directoryProvider.projectsDir, project.getName())
+        val outputFile = File(projectDir, destinationFileName)
         FileOutputStream(outputFile).use {
             inputStream?.copyTo(it)
         }
     }
 
-    fun renameFile(
+    fun renamePdf(
         directoryProvider: DirectoryProvider,
         oldFileName: String,
-        newFileName: String
+        newFileName: String,
+        project: Project
     ) {
-        val oldFile = File(directoryProvider.documentsDir, oldFileName)
-        val newFile = File(directoryProvider.documentsDir, newFileName)
+        val projectDir = File(directoryProvider.projectsDir, project.getName())
+        val oldFile = File(projectDir, oldFileName)
+        val newFile = File(projectDir, newFileName)
         oldFile.renameTo(newFile)
     }
 
-    fun deleteFile(directoryProvider: DirectoryProvider, fileName: String): Boolean {
-        val file = File(directoryProvider.documentsDir, fileName)
+    fun deletePdf(
+        directoryProvider: DirectoryProvider,
+        fileName: String,
+        project: Project
+    ): Boolean {
+        val projectDir = File(directoryProvider.projectsDir, project.getName())
+        val file = File(projectDir, fileName)
+        return file.deleteRecursively()
+    }
+
+    fun deleteProject(directoryProvider: DirectoryProvider, name: String): Boolean {
+        val file = File(directoryProvider.projectsDir, name)
         return file.deleteRecursively()
     }
 
     fun getFileUri(
         context: Context,
         directoryProvider: DirectoryProvider,
-        fileName: String
+        fileName: String,
+        project: Project
     ): Uri {
-        val file = File(directoryProvider.documentsDir, fileName)
+        val projectDir = File(directoryProvider.projectsDir, project.getName())
+        val file = File(projectDir, fileName)
         return FileProvider.getUriForFile(
             context,
             "${context.packageName}.provider",

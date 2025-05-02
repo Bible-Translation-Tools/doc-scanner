@@ -1,216 +1,167 @@
 package org.bibletranslationtools.docscanner.ui.screens.home
 
-import android.app.Activity
-import android.content.Intent
-import android.util.Log
-import androidx.activity.compose.LocalActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.IntentSenderRequest
-import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
-import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
-import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
-import org.bibletranslationtools.docscanner.FileUtilities
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import org.bibletranslationtools.docscanner.R
-import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
-import org.bibletranslationtools.docscanner.data.models.PdfEntity
+import org.bibletranslationtools.docscanner.ui.screens.common.AlertDialog
+import org.bibletranslationtools.docscanner.ui.screens.common.ConfirmDialog
 import org.bibletranslationtools.docscanner.ui.screens.common.ErrorScreen
-import org.bibletranslationtools.docscanner.ui.screens.common.LoadingDialog
-import org.bibletranslationtools.docscanner.ui.screens.home.components.PdfLayout
-import org.bibletranslationtools.docscanner.ui.screens.home.components.RenameDialog
-import org.bibletranslationtools.docscanner.ui.viewmodel.PdfViewModel
-import org.bibletranslationtools.docscanner.utils.showToast
-import org.koin.compose.koinInject
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.UUID
+import org.bibletranslationtools.docscanner.ui.screens.common.ExtraAction
+import org.bibletranslationtools.docscanner.ui.screens.common.PageType
+import org.bibletranslationtools.docscanner.ui.screens.common.ProgressDialog
+import org.bibletranslationtools.docscanner.ui.screens.common.TopNavigationBar
+import org.bibletranslationtools.docscanner.ui.screens.project.ProjectScreen
+import org.bibletranslationtools.docscanner.ui.screens.project.components.CreateProjectDialog
+import org.bibletranslationtools.docscanner.ui.screens.project.components.LoginDialog
+import org.bibletranslationtools.docscanner.ui.screens.home.components.ProjectLayout
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
-class HomeScreen() : Screen {
-
+class HomeScreen : Screen {
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-        val viewModel: PdfViewModel = koinScreenModel()
-        val directoryProvider: DirectoryProvider = koinInject()
+        val viewModel: HomeViewModel = koinScreenModel()
+        val navigator = LocalNavigator.currentOrThrow
 
-        var renamePdfEntity by remember { mutableStateOf<PdfEntity?>(null) }
-
-        // for activity
-        val activity = LocalActivity.current
-        val context = LocalContext.current
-
-        val pdfList by viewModel.pdfStateFlow.collectAsState()
+        val state by viewModel.state.collectAsStateWithLifecycle()
+        val event by viewModel.event.collectAsStateWithLifecycle(HomeEvent.Idle)
         var expandedItemId by remember { mutableStateOf<String?>(null) }
 
-        // val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
+        var showCreateProjectDialog by remember { mutableStateOf(false) }
+        var showLoginDialog by remember { mutableStateOf(false) }
 
-        val scannerLauncher =
-            rememberLauncherForActivityResult(contract = StartIntentSenderForResult()) { result ->
-                if (result.resultCode == Activity.RESULT_OK) {
-                    val scanningResult = GmsDocumentScanningResult.fromActivityResultIntent(result.data)
-
-                    scanningResult?.pdf?.let { pdf ->
-                        Log.d("pdfName", pdf.uri.lastPathSegment.toString())
-
-                        val date = Date()
-                        val fileName = SimpleDateFormat(
-                            "dd-MMM-yyyy HH:mm:ss",
-                            Locale.getDefault()
-                        ).format(date) + ".pdf"
-
-                        FileUtilities.copyPdfFileToAppDirectory(
-                            context,
-                            directoryProvider,
-                            pdf.uri,
-                            fileName
-                        )
-
-                        val pdfEntity = PdfEntity(
-                            UUID.randomUUID().toString(),
-                            fileName,
-                            FileUtilities.getFileSize(directoryProvider, fileName),
-                            date
-                        )
-
-                        viewModel.insertPdf(pdfEntity)
-                    }
-                }
-            }
-
-        val scanner = remember {
-            GmsDocumentScanning.getClient(
-                GmsDocumentScannerOptions.Builder()
-                    .setPageLimit(1000)
-                    .setGalleryImportAllowed(true)
-                    .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_PDF)
-                    .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
-                    .build()
-
+        if (showCreateProjectDialog) {
+            CreateProjectDialog(
+                onCreate = { viewModel.createProject(it) },
+                onDismissRequest = { showCreateProjectDialog = false }
             )
         }
 
-        if (viewModel.loadingDialog) {
-            LoadingDialog(
-                onDismissRequest = { viewModel.loadingDialog = false }
+        if (showLoginDialog) {
+            LoginDialog(
+                onLogin = { username, password ->
+                    viewModel.login(username, password)
+                },
+                onDismissRequest = { showLoginDialog = false }
             )
         }
 
-        renamePdfEntity?.let { pdf ->
-            RenameDialog(
-                name = pdf.name,
-                onRename = { viewModel.renamePdf(pdf, it) },
-                onDismissRequest = { renamePdfEntity = null }
+        state.confirmAction?.let {
+            ConfirmDialog(
+                message = it.message,
+                onConfirm = it.onConfirm,
+                onCancel = it.onCancel,
+                onDismiss = it.onCancel
             )
+        }
+
+        state.progress?.let {
+            ProgressDialog(it)
+        }
+
+        state.alert?.let {
+            AlertDialog(it.message, it.onClosed)
         }
 
         Scaffold(
             topBar = {
-                TopAppBar(title = {
-                    Text(text = stringResource(id = R.string.app_name))
-                })
+                val extraActions = mutableListOf<ExtraAction>()
+                if (state.profile != null) {
+                    extraActions.add(
+                        ExtraAction(
+                            title = stringResource(R.string.logout),
+                            icon = Icons.AutoMirrored.Filled.Logout,
+                            onClick = viewModel::logout
+                        )
+                    )
+                }
+                TopNavigationBar(
+                    title = stringResource(R.string.app_name),
+                    profile = state.profile,
+                    page = PageType.HOME,
+                    extraAction = extraActions.toTypedArray()
+                )
             },
             floatingActionButton = {
-                ExtendedFloatingActionButton(
+                FloatingActionButton(
                     modifier = Modifier.offset(0.dp, 0.dp),
                     onClick = {
-                        scanner.getStartScanIntent(activity!!).addOnSuccessListener {
-                            scannerLauncher.launch(
-                                IntentSenderRequest.Builder(it).build()
-                            )
-                        }.addOnFailureListener {
-                            it.printStackTrace()
-                            context.showToast(it.message.toString())
-                        }
-                    }, text = {
-                        Text(
-                            text = stringResource(R.string.scan),
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }, icon = {
+                        showCreateProjectDialog = true
+                    }, content = {
                         Icon(
-                            painter = painterResource(id = R.drawable.document_scanner),
-                            contentDescription = "Scan"
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Create"
                         )
                     })
             }
         ) { paddingValue ->
 
-            if (pdfList.isEmpty()) {
-                ErrorScreen(message = "No Pdf found")
+            if (state.projects.isEmpty()) {
+                ErrorScreen(message = stringResource(R.string.no_project_found))
             } else {
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValue)
                 ) {
-                    items(items = pdfList, key = { it.id }) { pdfEntity ->
-                        PdfLayout(
-                            pdfEntity = pdfEntity,
-                            menuShown = expandedItemId == pdfEntity.id,
+                    items(items = state.projects, key = { it.id }) { project ->
+                        ProjectLayout(
+                            project = project,
+                            menuShown = expandedItemId == project.id,
                             onCardClick = {
-                                val getFileUri = FileUtilities.getFileUri(
-                                    context,
-                                    directoryProvider,
-                                    pdfEntity.name
-                                )
-                                val browserIntent = Intent(Intent.ACTION_VIEW, getFileUri)
-                                browserIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                context.startActivity(browserIntent)
+                                navigator.push(ProjectScreen(project))
                             },
                             onMoreClick = {
-                                expandedItemId = if (expandedItemId != pdfEntity.id) {
-                                    pdfEntity.id
+                                expandedItemId = if (expandedItemId != project.id) {
+                                    project.id
                                 } else null
                             },
                             onUploadClick = {
-                                viewModel.uploadPdf(pdfEntity)
+                                if (state.profile != null) {
+                                    viewModel.uploadProject(project)
+                                } else {
+                                    viewModel.onEvent(HomeEvent.UpdateProject(project))
+                                    showLoginDialog = true
+                                }
                             },
                             onShareClick = {
-                                val fileUri = FileUtilities.getFileUri(
-                                    context,
-                                    directoryProvider,
-                                    pdfEntity.name
-                                )
-                                val shareIntent = Intent(Intent.ACTION_SEND)
-                                shareIntent.type = "application/pdf"
-                                shareIntent.putExtra(Intent.EXTRA_STREAM, fileUri)
-                                shareIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                context.startActivity(
-                                    Intent.createChooser(shareIntent, "share")
-                                )
-                            },
-                            onRenameClick = {
-                                renamePdfEntity = pdfEntity
+//                                val fileUri = FileUtilities.getFileUri(
+//                                    context,
+//                                    directoryProvider,
+//                                    pdfEntity.name
+//                                )
+//                                val shareIntent = Intent(Intent.ACTION_SEND)
+//                                shareIntent.type = "application/pdf"
+//                                shareIntent.putExtra(Intent.EXTRA_STREAM, fileUri)
+//                                shareIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+//                                context.startActivity(
+//                                    Intent.createChooser(shareIntent, "share")
+//                                )
                             },
                             onDeleteClick = {
-                                viewModel.deletePdf(pdfEntity)
+                                viewModel.deleteProject(project)
                             },
                             onDismissRequest = { expandedItemId = null }
                         )

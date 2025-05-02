@@ -10,72 +10,70 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
-import org.bibletranslationtools.docscanner.FileUtilities
+import org.bibletranslationtools.docscanner.utils.FileUtilities
 import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
-import org.bibletranslationtools.docscanner.data.models.PdfEntity
+import org.bibletranslationtools.docscanner.data.models.Pdf
+import org.bibletranslationtools.docscanner.data.models.Project
 import org.bibletranslationtools.docscanner.data.repository.PdfRepository
 import java.util.Date
 
-class PdfViewModel(
+class ProjectViewModel(
+    private val project: Project,
     private val directoryProvider: DirectoryProvider,
     private val pdfRepository: PdfRepository
 ) : ScreenModel {
 
     var loadingDialog by mutableStateOf(false)
 
-    private val _pdfStateFlow = MutableStateFlow<List<PdfEntity>>(arrayListOf())
-
-    val pdfStateFlow: StateFlow<List<PdfEntity>>
-        get() = _pdfStateFlow
+    private val _pdfState = MutableStateFlow<List<Pdf>>(arrayListOf())
+    val pdfState: StateFlow<List<Pdf>>
+        get() = _pdfState
 
     init {
         screenModelScope.launch(Dispatchers.IO) {
-            pdfRepository.getPdfList().catch {
+            pdfRepository.getProjectPdfs(project).catch {
                 it.printStackTrace()
             }.collect {
-                _pdfStateFlow.emit(it)
+                _pdfState.emit(it)
             }
         }
     }
 
-    fun insertPdf(pdfEntity: PdfEntity) {
+    fun insertPdf(pdf: Pdf) {
         screenModelScope.launch(Dispatchers.IO) {
-            pdfRepository.insertPdf(pdfEntity)
+            pdfRepository.insert(pdf)
         }
     }
 
-    fun uploadPdf(pdfEntity: PdfEntity) {
-        println("upload")
-    }
-
-    fun deletePdf(pdfEntity: PdfEntity) {
+    fun deletePdf(pdf: Pdf) {
         screenModelScope.launch(Dispatchers.IO) {
-            if (FileUtilities.deleteFile(directoryProvider, pdfEntity.name)) {
-                pdfRepository.deletePdf(pdfEntity)
+            if (FileUtilities.deletePdf(directoryProvider, pdf.name, project)) {
+                pdfRepository.delete(pdf)
             }
         }
     }
 
-    fun renamePdf(pdfEntity: PdfEntity, newName: String) {
+    fun renamePdf(pdf: Pdf, newName: String) {
         screenModelScope.launch(Dispatchers.IO) {
-            if (!pdfEntity.name.equals(newName, true)) {
-                FileUtilities.renameFile(
+            if (!pdf.name.equals(newName, true)) {
+                FileUtilities.renamePdf(
                     directoryProvider,
-                    pdfEntity.name,
-                    newName
+                    pdf.name,
+                    newName,
+                    project
                 )
-                val updatePdf = pdfEntity.copy(
+                val updatePdf = pdf.copy(
                     name = newName,
-                    lastModifiedTime = Date()
+                    lastModified = Date()
                 )
                 updatePdf(updatePdf)
             }
         }
     }
 
-    private fun updatePdf(pdfEntity: PdfEntity) {
+    private fun updatePdf(pdf: Pdf) {
         screenModelScope.launch(Dispatchers.IO) {
-            pdfRepository.updatePdf(pdfEntity)
+            pdfRepository.update(pdf)
         }
     }
 }

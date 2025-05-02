@@ -5,6 +5,7 @@ import org.eclipse.jgit.api.GitCommand
 import org.eclipse.jgit.api.errors.GitAPIException
 import org.eclipse.jgit.api.errors.JGitInternalException
 import org.eclipse.jgit.errors.LockFailedException
+import org.eclipse.jgit.lib.PersonIdent
 import org.eclipse.jgit.lib.StoredConfig
 import java.io.File
 import java.io.IOException
@@ -12,6 +13,7 @@ import java.io.IOException
 class Repo (val repositoryPath: String) {
     private var git: Git? = null
     private var storedConfig: StoredConfig? = null
+    private var author: PersonIdent? = null
     private val remotes: MutableSet<String> = HashSet<String>()
 
     init {
@@ -169,6 +171,42 @@ class Repo (val repositoryPath: String) {
         return command.call()
     }
 
+    @Throws(Exception::class)
+    fun commit(): Boolean {
+        val git: Git = getGit()
+
+        // check if dirty
+        if (isClean()) {
+            return true
+        }
+
+        // stage changes
+        val add = git.add()
+        add.addFilepattern(".")
+
+        try {
+            add.call()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // commit changes
+        val commit = git.commit()
+        commit.setAll(true)
+        if (author != null) {
+            commit.setAuthor(author)
+        }
+        commit.setMessage("auto save")
+
+        try {
+            commit.call()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+        }
+        return true
+    }
+
     /**
      * Checks if the throwable has the given cause
      * @param thrown the thrown object
@@ -185,5 +223,24 @@ class Repo (val repositoryPath: String) {
             child = child!!.cause
         } while (child != null)
         return null
+    }
+
+    fun setAuthor(name: String, email: String) {
+        author = PersonIdent(name, email)
+    }
+
+    /**
+     * Checks if there are any non-committed changes in the repo
+     * @return
+     * @throws Exception
+     */
+    fun isClean(): Boolean {
+        try {
+            val git: Git = getGit()
+            return git.status().call().isClean
+        } catch (e: java.lang.Exception) {
+            e.printStackTrace()
+        }
+        return false
     }
 }

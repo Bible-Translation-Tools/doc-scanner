@@ -26,7 +26,7 @@ import org.bibletranslationtools.docscanner.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RenameDialog(
+fun PdfRenameDialog(
     name: String,
     onRename: (String) -> Unit,
     onDismissRequest: () -> Unit,

@@ -4,30 +4,32 @@ import android.app.Application
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
-import org.bibletranslationtools.docscanner.data.local.PdfDatabase
-import org.bibletranslationtools.docscanner.data.models.PdfEntity
+import org.bibletranslationtools.docscanner.data.local.DocScanDatabase
+import org.bibletranslationtools.docscanner.data.models.Pdf
+import org.bibletranslationtools.docscanner.data.models.Project
 
 interface PdfRepository {
-    fun getPdfList(): Flow<List<PdfEntity>>
-    suspend fun insertPdf(pdfEntity: PdfEntity): Long
-    suspend fun deletePdf(pdfEntity: PdfEntity): Int
-    suspend fun updatePdf(pdfEntity: PdfEntity): Int
+    fun getProjectPdfs(project: Project): Flow<List<Pdf>>
+    suspend fun insert(pdf: Pdf): Long
+    suspend fun delete(pdf: Pdf): Int
+    suspend fun update(pdf: Pdf): Int
 }
 
 class PdfRepositoryImpl(application: Application): PdfRepository {
-    private val pdfDao = PdfDatabase.getInstance(application).pdfDao
+    private val pdfDao = DocScanDatabase.getInstance(application).pdfDao
 
-    override fun getPdfList() = pdfDao.getAllPdfs().flowOn(Dispatchers.IO)
+    override fun getProjectPdfs(project: Project) =
+        pdfDao.getProjectPdfs(project.id).flowOn(Dispatchers.IO)
 
-    override suspend fun insertPdf(pdfEntity: PdfEntity): Long {
-        return pdfDao.insertPdf(pdfEntity)
+    override suspend fun insert(pdf: Pdf): Long {
+        return pdfDao.insert(pdf)
     }
 
-    override suspend fun deletePdf(pdfEntity: PdfEntity): Int {
-        return pdfDao.deletePdf(pdfEntity)
+    override suspend fun delete(pdf: Pdf): Int {
+        return pdfDao.delete(pdf)
     }
 
-    override suspend fun updatePdf(pdfEntity: PdfEntity): Int {
-        return pdfDao.updatePdf(pdfEntity)
+    override suspend fun update(pdf: Pdf): Int {
+        return pdfDao.update(pdf)
     }
 }
