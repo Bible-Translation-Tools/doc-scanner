@@ -16,7 +16,7 @@
 
 ## Installation
 
-1. Download the latest Doc Scanner APK file from the [releases page](https://github.com/mXaln/doc-scanner/releases).
+1. Download the latest Doc Scanner APK file from the [releases page](https://github.com/Bible-Translation-Tools/doc-scanner/releases).
 2. Enable installation from unknown sources in your device settings.
 3. Open the downloaded APK file and follow the on-screen instructions to install.
 
@@ -75,8 +75,8 @@ We welcome contributions from the community! If you'd like to contribute, please
 
 If you have any questions, suggestions, or feedback, please feel free to reach out:
 
-**Developer:** [WycliffeAssociates](https://wycliffeassociates.org/)
+**Developer:** [WycliffeAssociates](https://wycliffeassociates.org/)  
 **Email:** info@wycliffeassociates.org
 
 ## License
-This project is licensed under the MIT License. See the [LICENSE](https://github.com/mXaln/doc-scanner/blob/main/LICENSE) for more details.
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/Bible-Translation-Tools/doc-scanner/blob/main/LICENSE) for more details.
