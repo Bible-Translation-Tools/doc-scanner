@@ -1,4 +1,4 @@
-package org.bibletranslationtools.docscanner.ui.screens.home
+package org.bibletranslationtools.docscanner.ui.viewmodel
 
 import android.content.Context
 import cafe.adriel.voyager.core.model.ScreenModel

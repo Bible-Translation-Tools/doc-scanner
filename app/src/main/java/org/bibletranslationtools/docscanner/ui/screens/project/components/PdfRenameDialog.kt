@@ -23,25 +23,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import org.bibletranslationtools.docscanner.R
-import org.bibletranslationtools.docscanner.data.models.Project
-import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateProjectDialog(
-    onCreate: (Project) -> Unit,
+fun PdfRenameDialog(
+    name: String,
+    onRename: (String) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    var languageText by remember {
-        mutableStateOf<String>("")
-    }
-
-    var bookText by remember {
-        mutableStateOf<String>("")
-    }
-
-    var levelText by remember {
-        mutableStateOf<String>("")
+    var newNameText by remember(name) {
+        mutableStateOf(name)
     }
 
     Dialog(onDismissRequest = onDismissRequest) {
@@ -54,56 +45,29 @@ fun CreateProjectDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    stringResource(R.string.create_project),
+                    stringResource(R.string.rename_pdf),
                     style = MaterialTheme.typography.headlineSmall
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
-                    value = languageText,
-                    onValueChange = { languageText = it },
-                    label = {
-                        Text(stringResource(R.string.language))
-                    }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = bookText,
-                    onValueChange = { bookText = it },
-                    label = {
-                        Text(stringResource(R.string.book))
-                    }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = levelText,
-                    onValueChange = { levelText = it },
-                    label = {
-                        Text(stringResource(R.string.level))
-                    }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                    value = newNameText,
+                    onValueChange = { newText -> newNameText = newText },
+
+                    label = { Text(stringResource(R.string.pdf_name)) })
+                Spacer(modifier = Modifier.height(9.dp))
                 Row {
                     Spacer(Modifier.width(0.dp))
 
                     Button(onClick = onDismissRequest) {
                         Text(stringResource(R.string.cancel))
                     }
+
                     Spacer(Modifier.width(6.dp))
-                    Button(
-                        onClick = {
-                            val project = Project(
-                                id = UUID.randomUUID().toString(),
-                                language = languageText,
-                                book = bookText,
-                                level = levelText
-                            )
-                            onCreate(project)
-                            onDismissRequest()
-                        },
-                        enabled = languageText.isNotEmpty() &&
-                                bookText.isNotEmpty() &&
-                                levelText.isNotEmpty()
-                    ) {
+
+                    Button(onClick = {
+                        onRename(newNameText)
+                        onDismissRequest()
+                    }) {
                         Text(stringResource(R.string.ok))
                     }
                 }

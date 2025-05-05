@@ -33,6 +33,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_JPEG
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_PDF
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.SCANNER_MODE_FULL
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import kotlinx.coroutines.Dispatchers
@@ -48,8 +51,8 @@ import org.bibletranslationtools.docscanner.ui.screens.common.ExtraAction
 import org.bibletranslationtools.docscanner.ui.screens.common.LoadingDialog
 import org.bibletranslationtools.docscanner.ui.screens.common.PageType
 import org.bibletranslationtools.docscanner.ui.screens.common.TopNavigationBar
-import org.bibletranslationtools.docscanner.ui.screens.home.components.PdfLayout
-import org.bibletranslationtools.docscanner.ui.screens.home.components.PdfRenameDialog
+import org.bibletranslationtools.docscanner.ui.screens.project.components.PdfLayout
+import org.bibletranslationtools.docscanner.ui.screens.project.components.PdfRenameDialog
 import org.bibletranslationtools.docscanner.ui.viewmodel.ProjectViewModel
 import org.bibletranslationtools.docscanner.utils.FileUtilities
 import org.bibletranslationtools.docscanner.utils.showToast
@@ -72,7 +75,6 @@ data class ProjectScreen(private val project: Project) : Screen {
         var renamePdf by remember { mutableStateOf<Pdf?>(null) }
         val uiScope = rememberCoroutineScope()
 
-        // for activity
         val activity = LocalActivity.current
         val context = LocalContext.current
 
@@ -128,10 +130,9 @@ data class ProjectScreen(private val project: Project) : Screen {
                 GmsDocumentScannerOptions.Builder()
                     .setPageLimit(1000)
                     .setGalleryImportAllowed(true)
-                    .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_PDF)
-                    .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+                    .setResultFormats(RESULT_FORMAT_PDF)
+                    .setScannerMode(SCANNER_MODE_FULL)
                     .build()
-
             )
         }
 

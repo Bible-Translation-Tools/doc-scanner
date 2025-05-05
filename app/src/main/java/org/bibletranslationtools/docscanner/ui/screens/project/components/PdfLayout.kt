@@ -1,4 +1,4 @@
-package org.bibletranslationtools.docscanner.ui.screens.home.components
+package org.bibletranslationtools.docscanner.ui.screens.project.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column

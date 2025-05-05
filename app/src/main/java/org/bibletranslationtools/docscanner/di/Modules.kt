@@ -16,7 +16,7 @@ import org.bibletranslationtools.docscanner.data.repository.PreferenceRepository
 import org.bibletranslationtools.docscanner.data.repository.PreferenceRepositoryImpl
 import org.bibletranslationtools.docscanner.data.repository.ProjectRepository
 import org.bibletranslationtools.docscanner.data.repository.ProjectRepositoryImpl
-import org.bibletranslationtools.docscanner.ui.screens.home.HomeViewModel
+import org.bibletranslationtools.docscanner.ui.viewmodel.HomeViewModel
 import org.bibletranslationtools.docscanner.ui.viewmodel.ProjectViewModel
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf

@@ -34,9 +34,11 @@ import org.bibletranslationtools.docscanner.ui.screens.common.PageType
 import org.bibletranslationtools.docscanner.ui.screens.common.ProgressDialog
 import org.bibletranslationtools.docscanner.ui.screens.common.TopNavigationBar
 import org.bibletranslationtools.docscanner.ui.screens.project.ProjectScreen
-import org.bibletranslationtools.docscanner.ui.screens.project.components.CreateProjectDialog
-import org.bibletranslationtools.docscanner.ui.screens.project.components.LoginDialog
+import org.bibletranslationtools.docscanner.ui.screens.home.components.CreateProjectDialog
+import org.bibletranslationtools.docscanner.ui.screens.home.components.LoginDialog
 import org.bibletranslationtools.docscanner.ui.screens.home.components.ProjectLayout
+import org.bibletranslationtools.docscanner.ui.viewmodel.HomeEvent
+import org.bibletranslationtools.docscanner.ui.viewmodel.HomeViewModel
 
 class HomeScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
