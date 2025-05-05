@@ -12,19 +12,15 @@ import org.bibletranslationtools.docscanner.data.models.Project
 @Dao
 interface ProjectDao {
 
-//    Insert
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(project: Project) : Long
 
-//    Delete
     @Delete
     suspend fun delete(project: Project) : Int
 
-//    Update
     @Update
     suspend fun update(project: Project) : Int
 
-//    Query
     @Query("SELECT * FROM projects")
     fun getAllProjects(): Flow<List<Project>>
 }

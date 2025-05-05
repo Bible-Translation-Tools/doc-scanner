@@ -10,6 +10,12 @@ import org.bibletranslationtools.docscanner.data.local.git.PushProject
 import org.bibletranslationtools.docscanner.data.local.git.RegisterSSHKeys
 import org.bibletranslationtools.docscanner.data.local.git.SearchGogsRepositories
 import org.bibletranslationtools.docscanner.data.models.Project
+import org.bibletranslationtools.docscanner.data.repository.BookRepository
+import org.bibletranslationtools.docscanner.data.repository.BookRepositoryImpl
+import org.bibletranslationtools.docscanner.data.repository.LanguageRepository
+import org.bibletranslationtools.docscanner.data.repository.LanguageRepositoryImpl
+import org.bibletranslationtools.docscanner.data.repository.LevelRepository
+import org.bibletranslationtools.docscanner.data.repository.LevelRepositoryImpl
 import org.bibletranslationtools.docscanner.data.repository.PdfRepository
 import org.bibletranslationtools.docscanner.data.repository.PdfRepositoryImpl
 import org.bibletranslationtools.docscanner.data.repository.PreferenceRepository
@@ -25,12 +31,20 @@ import org.koin.dsl.module
 
 val sharedModule = module {
     singleOf(::DirectoryProviderImpl).bind<DirectoryProvider>()
+    singleOf(::PreferenceRepositoryImpl).bind<PreferenceRepository>()
+
+    // Database repositories
     singleOf(::ProjectRepositoryImpl).bind<ProjectRepository>()
     singleOf(::PdfRepositoryImpl).bind<PdfRepository>()
-    singleOf(::PreferenceRepositoryImpl).bind<PreferenceRepository>()
+    singleOf(::LanguageRepositoryImpl).bind<LanguageRepository>()
+    singleOf(::BookRepositoryImpl).bind<BookRepository>()
+    singleOf(::LevelRepositoryImpl).bind<LevelRepository>()
+
+    // View models
     factoryOf(::HomeViewModel)
     factory { (project: Project) -> ProjectViewModel(project, get(), get()) }
 
+    // Git dependencies
     factoryOf(::GetRepository)
     factoryOf(::CreateRepository)
     factoryOf(::SearchGogsRepositories)

@@ -7,20 +7,20 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
-import org.bibletranslationtools.docscanner.data.models.Pdf
+import org.bibletranslationtools.docscanner.data.models.Level
 
 @Dao
-interface PdfDao {
+interface LevelDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(pdf: Pdf): Long
+    suspend fun insert(level: Level): Long
 
     @Delete
-    suspend fun delete(pdf: Pdf): Int
+    suspend fun delete(level: Level): Int
 
     @Update
-    suspend fun update(pdf: Pdf): Int
+    suspend fun update(level: Level): Int
 
-    @Query("SELECT * FROM pdfs WHERE project_id=:projectId")
-    fun getProjectPdfs(projectId: String): Flow<List<Pdf>>
+    @Query("SELECT * FROM levels")
+    fun getAllLevels(): Flow<List<Level>>
 }
