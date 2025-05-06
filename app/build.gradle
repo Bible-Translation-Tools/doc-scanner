@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("kotlin-kapt")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
@@ -62,6 +63,7 @@ dependencies {
     implementation("androidx.documentfile:documentfile:1.0.1")
     implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
     implementation("androidx.preference:preference-ktx:1.2.1")
+    implementation("io.github.mejdi14:KMP-Searchable-Dropdown-android:1.1.0")
 
     // ML Kit
     implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0-beta1")
@@ -77,9 +79,6 @@ dependencies {
 
     // Optional - kotlin extension and coroutines support for Room
     implementation("androidx.room:room-ktx:2.7.1")
-
-    // Splash screen
-    implementation("androidx.core:core-splashscreen:1.0.1")
 
     // Git and Gogs
     implementation("org.eclipse.jgit:org.eclipse.jgit:3.7.1.201504261725-r")
@@ -98,7 +97,10 @@ dependencies {
     implementation("io.insert-koin:koin-compose:4.0.2")
     implementation("io.insert-koin:koin-compose-viewmodel:4.0.2")
 
-    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
+
+    implementation(project(":shared"))
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")

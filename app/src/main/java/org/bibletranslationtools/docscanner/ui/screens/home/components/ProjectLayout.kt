@@ -34,11 +34,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.bibletranslationtools.docscanner.R
 import org.bibletranslationtools.docscanner.data.models.Project
+import org.bibletranslationtools.docscanner.data.models.ProjectWithData
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectLayout(
-    project: Project,
+    project: ProjectWithData,
     menuShown: Boolean,
     onCardClick: () -> Unit,
     onMoreClick: () -> Unit,

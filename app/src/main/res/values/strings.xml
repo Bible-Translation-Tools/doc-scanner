@@ -14,8 +14,11 @@
     <string name="no_project_found">No projects found</string>
     <string name="no_scan_found">No scans found</string>
     <string name="language">Language</string>
+    <string name="select_language">Select Language</string>
     <string name="book">Book</string>
+    <string name="select_book">Select Book</string>
     <string name="level">Level</string>
+    <string name="select_level">Select Level</string>
     <string name="login">Login</string>
     <string name="logout">Logout</string>
     <string name="username">Username</string>
@@ -33,6 +36,11 @@
     <string name="push_success">Uploaded successfully</string>
     <string name="push_rejected">Upload rejected</string>
     <string name="confirm_generate_ssh_keys">Auth failed. Would you like to regenerate ssh keys?</string>
+    <string name="initializing_languages">Initializing languages…</string>
+    <string name="initializing_books">Initializing books…</string>
+    <string name="initializing_levels">Initializing levels…</string>
+    <string name="initialization_failed">Initialization failed</string>
+    <string name="loading_projects">Loading projects…</string>
     <string name="git_awaiting_report" translatable="false">[<xliff:g example="refs/heads/master" id="remote">%1$s</xliff:g>] Push process is awaiting update report from remote repository.</string>
     <string name="git_non_existing" translatable="false">[<xliff:g example="refs/heads/master" id="remote">%1$s</xliff:g>] Remote ref didn\'t exist.</string>
     <string name="git_not_attempted" translatable="false">[<xliff:g example="refs/heads/master" id="remote">%s</xliff:g>] Push process hasn\'t yet attempted to update this ref.</string>

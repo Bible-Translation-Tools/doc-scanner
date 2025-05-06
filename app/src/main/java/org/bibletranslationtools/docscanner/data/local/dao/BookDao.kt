@@ -6,7 +6,6 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import kotlinx.coroutines.flow.Flow
 import org.bibletranslationtools.docscanner.data.models.Book
 
 @Dao
@@ -22,11 +21,14 @@ interface BookDao {
     suspend fun update(book: Book): Int
 
     @Query("SELECT * FROM books")
-    fun getAllBooks(): Flow<List<Book>>
+    fun getAllBooks(): List<Book>
 
     @Query("SELECT * FROM books WHERE anthology='ot'")
-    fun getOtBooks(): Flow<List<Book>>
+    fun getOtBooks(): List<Book>
 
     @Query("SELECT * FROM books WHERE anthology='nt'")
-    fun getNtBooks(): Flow<List<Book>>
+    fun getNtBooks(): List<Book>
+
+    @Query("DELETE FROM books")
+    fun deleteAll(): Int
 }

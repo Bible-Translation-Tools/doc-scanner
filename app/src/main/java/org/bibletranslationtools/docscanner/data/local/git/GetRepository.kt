@@ -1,7 +1,7 @@
 package org.bibletranslationtools.docscanner.data.local.git
 
 import org.bibletranslationtools.docscanner.data.local.OnProgressListener
-import org.bibletranslationtools.docscanner.data.models.Project
+import org.bibletranslationtools.docscanner.data.models.ProjectWithData
 import org.bibletranslationtools.docscanner.data.models.getName
 import org.unfoldingword.gogsclient.Repository
 import kotlin.collections.isNotEmpty
@@ -13,7 +13,7 @@ class GetRepository(
     private val max = 100
 
     fun execute(
-        project: Project,
+        project: ProjectWithData,
         profile: Profile,
         progressListener: OnProgressListener? = null
     ): Repository? {

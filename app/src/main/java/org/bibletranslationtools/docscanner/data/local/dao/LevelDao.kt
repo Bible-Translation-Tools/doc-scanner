@@ -6,7 +6,6 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import kotlinx.coroutines.flow.Flow
 import org.bibletranslationtools.docscanner.data.models.Level
 
 @Dao
@@ -22,5 +21,8 @@ interface LevelDao {
     suspend fun update(level: Level): Int
 
     @Query("SELECT * FROM levels")
-    fun getAllLevels(): Flow<List<Level>>
+    fun getAllLevels(): List<Level>
+
+    @Query("DELETE FROM levels")
+    fun deleteAll(): Int
 }

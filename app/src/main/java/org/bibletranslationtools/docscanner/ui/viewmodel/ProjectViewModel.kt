@@ -14,11 +14,12 @@ import org.bibletranslationtools.docscanner.utils.FileUtilities
 import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
 import org.bibletranslationtools.docscanner.data.models.Pdf
 import org.bibletranslationtools.docscanner.data.models.Project
+import org.bibletranslationtools.docscanner.data.models.ProjectWithData
 import org.bibletranslationtools.docscanner.data.repository.PdfRepository
 import java.util.Date
 
 class ProjectViewModel(
-    private val project: Project,
+    private val project: ProjectWithData,
     private val directoryProvider: DirectoryProvider,
     private val pdfRepository: PdfRepository
 ) : ScreenModel {
@@ -31,7 +32,7 @@ class ProjectViewModel(
 
     init {
         screenModelScope.launch(Dispatchers.IO) {
-            pdfRepository.getProjectPdfs(project).catch {
+            pdfRepository.getProjectPdfs(project.project).catch {
                 it.printStackTrace()
             }.collect {
                 _pdfState.emit(it)

@@ -4,7 +4,7 @@ import android.content.Context
 import org.bibletranslationtools.docscanner.R
 import org.bibletranslationtools.docscanner.data.local.OnProgressListener
 import org.bibletranslationtools.docscanner.data.local.Settings
-import org.bibletranslationtools.docscanner.data.models.Project
+import org.bibletranslationtools.docscanner.data.models.ProjectWithData
 import org.bibletranslationtools.docscanner.data.models.getName
 import org.bibletranslationtools.docscanner.data.repository.PreferenceRepository
 import org.bibletranslationtools.docscanner.data.repository.getPref
@@ -18,7 +18,7 @@ class CreateRepository(
     private val max = 100
 
     fun execute(
-        project: Project,
+        project: ProjectWithData,
         profile: Profile,
         progressListener: OnProgressListener? = null
     ): Boolean {

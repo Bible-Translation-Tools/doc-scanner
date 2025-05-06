@@ -8,7 +8,7 @@ import androidx.core.content.FileProvider
 import androidx.core.net.toFile
 import androidx.documentfile.provider.DocumentFile
 import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
-import org.bibletranslationtools.docscanner.data.models.Project
+import org.bibletranslationtools.docscanner.data.models.ProjectWithData
 import org.bibletranslationtools.docscanner.data.models.getName
 import java.io.BufferedReader
 import java.io.File
@@ -284,7 +284,7 @@ object FileUtilities {
     fun getFileSize(
         directoryProvider: DirectoryProvider,
         fileName: String,
-        project: Project
+        project: ProjectWithData
     ): String {
         val projectDir = File(directoryProvider.projectsDir, project.getName())
         val file = File(projectDir, fileName)
@@ -304,7 +304,7 @@ object FileUtilities {
         directoryProvider: DirectoryProvider,
         pdfUri: Uri,
         destinationFileName: String,
-        project: Project
+        project: ProjectWithData
     ) {
         val inputStream = context.contentResolver.openInputStream(pdfUri)
         val projectDir = File(directoryProvider.projectsDir, project.getName())
@@ -318,7 +318,7 @@ object FileUtilities {
         directoryProvider: DirectoryProvider,
         oldFileName: String,
         newFileName: String,
-        project: Project
+        project: ProjectWithData
     ) {
         val projectDir = File(directoryProvider.projectsDir, project.getName())
         val oldFile = File(projectDir, oldFileName)
@@ -329,7 +329,7 @@ object FileUtilities {
     fun deletePdf(
         directoryProvider: DirectoryProvider,
         fileName: String,
-        project: Project
+        project: ProjectWithData
     ): Boolean {
         val projectDir = File(directoryProvider.projectsDir, project.getName())
         val file = File(projectDir, fileName)
@@ -345,7 +345,7 @@ object FileUtilities {
         context: Context,
         directoryProvider: DirectoryProvider,
         fileName: String,
-        project: Project
+        project: ProjectWithData
     ): Uri {
         val projectDir = File(directoryProvider.projectsDir, project.getName())
         val file = File(projectDir, fileName)

@@ -38,6 +38,7 @@ data class ExtraAction(
 )
 
 enum class PageType {
+    SPLASH,
     HOME,
     PROJECT,
     SETTINGS

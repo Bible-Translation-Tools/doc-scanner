@@ -1,14 +1,12 @@
 package org.bibletranslationtools.docscanner.data.repository
 
 import android.app.Application
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOn
 import org.bibletranslationtools.docscanner.data.local.DocScanDatabase
 import org.bibletranslationtools.docscanner.data.models.Level
 
 interface LevelRepository {
-    fun getAllLevels(): Flow<List<Level>>
+    fun getAllLevels(): List<Level>
+    suspend fun deleteAll(): Int
     suspend fun insert(level: Level): Long
     suspend fun delete(level: Level): Int
     suspend fun update(level: Level): Int
@@ -17,7 +15,9 @@ interface LevelRepository {
 class LevelRepositoryImpl(application: Application) : LevelRepository {
     private val levelDao = DocScanDatabase.getInstance(application).levelDao
 
-    override fun getAllLevels() = levelDao.getAllLevels().flowOn(Dispatchers.IO)
+    override fun getAllLevels() = levelDao.getAllLevels()
+
+    override suspend fun deleteAll() = levelDao.deleteAll()
 
     override suspend fun insert(level: Level): Long {
         return levelDao.insert(level)

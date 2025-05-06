@@ -33,7 +33,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
-import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_JPEG
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_PDF
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.SCANNER_MODE_FULL
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
@@ -43,7 +42,7 @@ import kotlinx.coroutines.launch
 import org.bibletranslationtools.docscanner.R
 import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
 import org.bibletranslationtools.docscanner.data.models.Pdf
-import org.bibletranslationtools.docscanner.data.models.Project
+import org.bibletranslationtools.docscanner.data.models.ProjectWithData
 import org.bibletranslationtools.docscanner.data.models.getName
 import org.bibletranslationtools.docscanner.data.models.getRepo
 import org.bibletranslationtools.docscanner.ui.screens.common.ErrorScreen
@@ -63,7 +62,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
-data class ProjectScreen(private val project: Project) : Screen {
+data class ProjectScreen(private val project: ProjectWithData) : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
@@ -117,7 +116,7 @@ data class ProjectScreen(private val project: Project) : Screen {
                         fileName,
                         FileUtilities.getFileSize(directoryProvider, fileName, project),
                         date,
-                        project.id
+                        project.project.id
                     )
 
                     viewModel.insertPdf(pdfEntity)

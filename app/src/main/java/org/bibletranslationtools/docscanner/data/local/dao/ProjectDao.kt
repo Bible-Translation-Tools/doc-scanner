@@ -8,6 +8,7 @@ import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import org.bibletranslationtools.docscanner.data.models.Project
+import org.bibletranslationtools.docscanner.data.models.ProjectWithData
 
 @Dao
 interface ProjectDao {
@@ -22,5 +23,5 @@ interface ProjectDao {
     suspend fun update(project: Project) : Int
 
     @Query("SELECT * FROM projects")
-    fun getAllProjects(): Flow<List<Project>>
+    fun getAllProjects(): Flow<List<ProjectWithData>>
 }

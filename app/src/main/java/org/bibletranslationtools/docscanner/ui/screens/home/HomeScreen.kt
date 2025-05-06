@@ -1,5 +1,7 @@
 package org.bibletranslationtools.docscanner.ui.screens.home
 
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -33,12 +35,13 @@ import org.bibletranslationtools.docscanner.ui.screens.common.ExtraAction
 import org.bibletranslationtools.docscanner.ui.screens.common.PageType
 import org.bibletranslationtools.docscanner.ui.screens.common.ProgressDialog
 import org.bibletranslationtools.docscanner.ui.screens.common.TopNavigationBar
-import org.bibletranslationtools.docscanner.ui.screens.project.ProjectScreen
 import org.bibletranslationtools.docscanner.ui.screens.home.components.CreateProjectDialog
 import org.bibletranslationtools.docscanner.ui.screens.home.components.LoginDialog
 import org.bibletranslationtools.docscanner.ui.screens.home.components.ProjectLayout
+import org.bibletranslationtools.docscanner.ui.screens.project.ProjectScreen
 import org.bibletranslationtools.docscanner.ui.viewmodel.HomeEvent
 import org.bibletranslationtools.docscanner.ui.viewmodel.HomeViewModel
+import kotlin.system.exitProcess
 
 class HomeScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -48,43 +51,16 @@ class HomeScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
 
         val state by viewModel.state.collectAsStateWithLifecycle()
-        val event by viewModel.event.collectAsStateWithLifecycle(HomeEvent.Idle)
         var expandedItemId by remember { mutableStateOf<String?>(null) }
 
         var showCreateProjectDialog by remember { mutableStateOf(false) }
         var showLoginDialog by remember { mutableStateOf(false) }
 
-        if (showCreateProjectDialog) {
-            CreateProjectDialog(
-                onCreate = { viewModel.createProject(it) },
-                onDismissRequest = { showCreateProjectDialog = false }
-            )
-        }
+        val activity = LocalActivity.current
 
-        if (showLoginDialog) {
-            LoginDialog(
-                onLogin = { username, password ->
-                    viewModel.login(username, password)
-                },
-                onDismissRequest = { showLoginDialog = false }
-            )
-        }
-
-        state.confirmAction?.let {
-            ConfirmDialog(
-                message = it.message,
-                onConfirm = it.onConfirm,
-                onCancel = it.onCancel,
-                onDismiss = it.onCancel
-            )
-        }
-
-        state.progress?.let {
-            ProgressDialog(it)
-        }
-
-        state.alert?.let {
-            AlertDialog(it.message, it.onClosed)
+        BackHandler {
+            activity?.finishAffinity()
+            exitProcess(0)
         }
 
         Scaffold(
@@ -128,16 +104,16 @@ class HomeScreen : Screen {
                         .fillMaxSize()
                         .padding(paddingValue)
                 ) {
-                    items(items = state.projects, key = { it.id }) { project ->
+                    items(items = state.projects, key = { it.project.id }) { project ->
                         ProjectLayout(
                             project = project,
-                            menuShown = expandedItemId == project.id,
+                            menuShown = expandedItemId == project.project.id,
                             onCardClick = {
                                 navigator.push(ProjectScreen(project))
                             },
                             onMoreClick = {
-                                expandedItemId = if (expandedItemId != project.id) {
-                                    project.id
+                                expandedItemId = if (expandedItemId != project.project.id) {
+                                    project.project.id
                                 } else null
                             },
                             onUploadClick = {
@@ -169,6 +145,42 @@ class HomeScreen : Screen {
                         )
                     }
                 }
+            }
+
+            if (showCreateProjectDialog) {
+                CreateProjectDialog(
+                    languages = state.languages,
+                    books = state.books,
+                    levels = state.levels,
+                    onCreate = { viewModel.createProject(it) },
+                    onDismissRequest = { showCreateProjectDialog = false }
+                )
+            }
+
+            if (showLoginDialog) {
+                LoginDialog(
+                    onLogin = { username, password ->
+                        viewModel.login(username, password)
+                    },
+                    onDismissRequest = { showLoginDialog = false }
+                )
+            }
+
+            state.confirmAction?.let {
+                ConfirmDialog(
+                    message = it.message,
+                    onConfirm = it.onConfirm,
+                    onCancel = it.onCancel,
+                    onDismiss = it.onCancel
+                )
+            }
+
+            state.progress?.let {
+                ProgressDialog(it)
+            }
+
+            state.alert?.let {
+                AlertDialog(it.message, it.onClosed)
             }
         }
     }

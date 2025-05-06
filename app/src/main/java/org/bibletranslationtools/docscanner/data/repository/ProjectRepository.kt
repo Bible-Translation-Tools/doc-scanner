@@ -6,9 +6,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import org.bibletranslationtools.docscanner.data.local.DocScanDatabase
 import org.bibletranslationtools.docscanner.data.models.Project
+import org.bibletranslationtools.docscanner.data.models.ProjectWithData
 
 interface ProjectRepository {
-    fun getProjects(): Flow<List<Project>>
+    fun getProjects(): Flow<List<ProjectWithData>>
     suspend fun insert(project: Project): Long
     suspend fun delete(project: Project): Int
     suspend fun update(project: Project): Int

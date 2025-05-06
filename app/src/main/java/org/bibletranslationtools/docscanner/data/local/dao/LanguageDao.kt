@@ -6,7 +6,6 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import kotlinx.coroutines.flow.Flow
 import org.bibletranslationtools.docscanner.data.models.Language
 
 @Dao
@@ -22,11 +21,14 @@ interface LanguageDao {
     suspend fun update(language: Language): Int
 
     @Query("SELECT * FROM languages")
-    fun getAllLanguages(): Flow<List<Language>>
+    fun getAllLanguages(): List<Language>
 
     @Query("SELECT * FROM languages WHERE gw=1")
-    fun getGlLanguages(): Flow<List<Language>>
+    fun getGlLanguages(): List<Language>
 
     @Query("SELECT * FROM languages WHERE gw=0")
-    fun getHeartLanguages(): Flow<List<Language>>
+    fun getHeartLanguages(): List<Language>
+
+    @Query("DELETE FROM languages")
+    fun deleteAll(): Int
 }
