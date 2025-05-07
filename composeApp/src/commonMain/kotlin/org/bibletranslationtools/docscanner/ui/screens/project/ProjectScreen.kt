@@ -21,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -38,16 +37,8 @@ import docscanner.composeapp.generated.resources.Res
 import docscanner.composeapp.generated.resources.document_scanner
 import docscanner.composeapp.generated.resources.no_scan_found
 import docscanner.composeapp.generated.resources.scan
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
-import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
-import org.bibletranslationtools.docscanner.data.local.git.Profile
 import org.bibletranslationtools.docscanner.data.models.Pdf
 import org.bibletranslationtools.docscanner.data.models.Project
-import org.bibletranslationtools.docscanner.data.models.getRepo
 import org.bibletranslationtools.docscanner.data.models.getTitle
 import org.bibletranslationtools.docscanner.ui.common.AlertDialog
 import org.bibletranslationtools.docscanner.ui.common.ErrorScreen
@@ -58,27 +49,21 @@ import org.bibletranslationtools.docscanner.ui.common.TopNavigationBar
 import org.bibletranslationtools.docscanner.ui.screens.project.components.PdfLayout
 import org.bibletranslationtools.docscanner.ui.screens.project.components.PdfRenameDialog
 import org.bibletranslationtools.docscanner.ui.viewmodel.ProjectViewModel
-import org.bibletranslationtools.docscanner.utils.FileUtils
-import org.bibletranslationtools.docscanner.utils.format
 import org.bibletranslationtools.docscanner.utils.showToast
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
 data class ProjectScreen(
-    private val project: Project,
-    private val profile: Profile?
+    private val project: Project
 ) : Screen {
     @Composable
     override fun Content() {
         val viewModel = koinScreenModel<ProjectViewModel> {
             parametersOf(project)
         }
-        val directoryProvider: DirectoryProvider = koinInject()
 
         var renamePdf by remember { mutableStateOf<Pdf?>(null) }
-        val uiScope = rememberCoroutineScope()
 
         val activity = LocalActivity.current
         val context = LocalContext.current
@@ -96,36 +81,7 @@ data class ProjectScreen(
 
                 scanningResult?.pdf?.let { pdf ->
                     Log.d("pdfName", pdf.uri.lastPathSegment.toString())
-
-                    val date = Clock.System.now()
-                        .toLocalDateTime(TimeZone.currentSystemDefault())
-                    val fileName = "${date.format()}.pdf"
-
-                    FileUtils.copyPdfFileToAppDirectory(
-                        context,
-                        directoryProvider,
-                        pdf.uri,
-                        fileName,
-                        project
-                    )
-
-                    uiScope.launch(Dispatchers.IO) {
-                        val repo = project.getRepo(directoryProvider)
-                        profile?.gogsUser?.let { user ->
-                            repo.setAuthor(user.username, user.email)
-                        }
-                        repo.commit()
-                    }
-
-                    val pdfEntity = Pdf(
-                        name = fileName,
-                        size = FileUtils.getFileSize(directoryProvider, fileName, project),
-                        created = date.toString(),
-                        modified = date.toString(),
-                        projectId = project.id
-                    )
-
-                    viewModel.insertPdf(pdfEntity)
+                    viewModel.insertPdf(context, pdf.uri)
                 }
             }
         }
@@ -146,7 +102,7 @@ data class ProjectScreen(
                 val extraActions = mutableListOf<ExtraAction>()
                 TopNavigationBar(
                     title = project.getTitle(),
-                    profile = profile,
+                    profile = state.profile,
                     page = PageType.PROJECT,
                     extraAction = extraActions.toTypedArray()
                 )
@@ -194,12 +150,7 @@ data class ProjectScreen(
                             pdf = pdf,
                             menuShown = expandedItemId == pdf.id,
                             onCardClick = {
-                                val getFileUri = FileUtils.getFileUri(
-                                    context,
-                                    directoryProvider,
-                                    pdf.name,
-                                    project
-                                )
+                                val getFileUri = viewModel.getFileUri(context, pdf.name)
                                 val browserIntent = Intent(Intent.ACTION_VIEW, getFileUri)
                                 browserIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                                 context.startActivity(browserIntent)

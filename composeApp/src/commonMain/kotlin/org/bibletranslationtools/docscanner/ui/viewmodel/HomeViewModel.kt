@@ -49,6 +49,7 @@ import org.bibletranslationtools.docscanner.data.repository.LevelRepository
 import org.bibletranslationtools.docscanner.data.repository.PreferenceRepository
 import org.bibletranslationtools.docscanner.data.repository.ProjectRepository
 import org.bibletranslationtools.docscanner.data.repository.getPref
+import org.bibletranslationtools.docscanner.data.repository.setPref
 import org.bibletranslationtools.docscanner.ui.common.ConfirmAction
 import org.jetbrains.compose.resources.getString
 import org.json.JSONObject
@@ -103,11 +104,7 @@ class HomeViewModel(
 
             preferenceRepository.getPref<String>(Settings.KEY_PREF_PROFILE)?.let {
                 updateProfile(
-                    Profile.fromJSON(
-                        preferenceRepository,
-                        directoryProvider,
-                        JSONObject(it)
-                    )
+                    Profile.fromJSON(JSONObject(it))
                 )
             }
 
@@ -266,11 +263,11 @@ class HomeViewModel(
                 val profileString = preferenceRepository.getPref<String>(Settings.KEY_PREF_PROFILE)
                 updateProfile(
                     Profile.fromJSON(
-                        preferenceRepository,
-                        directoryProvider,
                         profileString?.let { JSONObject(it) }
                     ).also {
                         it.login(result.user.fullName, user)
+                        val string = it.toJSON().toString()
+                        preferenceRepository.setPref(Settings.KEY_PREF_PROFILE, string)
                     }
                 )
                 doRegisterSshKeys()
@@ -299,6 +296,9 @@ class HomeViewModel(
             _state.value.profile?.let {
                 gogsLogout.execute(it)
                 it.logout()
+                preferenceRepository.setPref<String>(Settings.KEY_PREF_PROFILE, null)
+                FileSystem.SYSTEM.deleteRecursively(directoryProvider.sshKeysDir)
+
                 updateProfile(null)
 
                 updateAlert(

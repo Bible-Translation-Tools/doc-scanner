@@ -1,10 +1,5 @@
 package org.bibletranslationtools.docscanner.data.local.git
 
-import okio.FileSystem
-import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
-import org.bibletranslationtools.docscanner.data.local.Settings
-import org.bibletranslationtools.docscanner.data.repository.PreferenceRepository
-import org.bibletranslationtools.docscanner.data.repository.setPref
 import org.json.JSONException
 import org.json.JSONObject
 import org.unfoldingword.gogsclient.Token
@@ -13,10 +8,7 @@ import org.unfoldingword.gogsclient.User
 /**
  * Represents a single user profile
  */
-class Profile(
-    private val prefs: PreferenceRepository,
-    private val directoryProvider: DirectoryProvider
-) {
+class Profile private constructor() {
     /**
      * Returns the name of the translator.
      * The name from their gogs account will be used if it exists
@@ -50,10 +42,6 @@ class Profile(
      * Returns the version of the terms of use accepted last time
      */
     var termsOfUseLastAccepted: Int = 0
-        set(value) {
-            field = value
-            saveProfile()
-        }
 
     /**
      * Returns true if the user is logged in
@@ -82,7 +70,6 @@ class Profile(
     fun login(name: String?, user: User? = null) {
         fullName = name
         gogsUser = user
-        saveProfile()
     }
 
     /**
@@ -92,23 +79,6 @@ class Profile(
         fullName = null
         gogsUser = null
         termsOfUseLastAccepted = 0
-        deleteProfile()
-    }
-
-    /**
-     * Save profile to the preferences
-     */
-    private fun saveProfile() {
-        val profileString = this.toJSON().toString()
-        prefs.setPref(Settings.KEY_PREF_PROFILE, profileString)
-    }
-
-    /**
-     * Deletes the profile from the preferences
-     */
-    private fun deleteProfile() {
-        prefs.setPref<String>(Settings.KEY_PREF_PROFILE, null)
-        FileSystem.SYSTEM.deleteRecursively(directoryProvider.sshKeysDir)
     }
 
     companion object {
@@ -121,11 +91,7 @@ class Profile(
          * @throws Exception
          */
         @Throws(Exception::class)
-        fun fromJSON(
-            prefs: PreferenceRepository,
-            directoryProvider: DirectoryProvider,
-            json: JSONObject?
-        ): Profile {
+        fun fromJSON(json: JSONObject?): Profile {
             var name: String? = null
             var user: User? = null
             var gogsToken: Token? = null
@@ -155,7 +121,7 @@ class Profile(
                 it.token = gogsToken
             }
 
-            return Profile(prefs, directoryProvider).apply {
+            return Profile().apply {
                 fullName = name
                 gogsUser = user
                 termsOfUseLastAccepted = termsLastAccepted

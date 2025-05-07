@@ -51,7 +51,9 @@ val sharedModule = module {
     // View models
     factoryOf(::SplashViewModel)
     factoryOf(::HomeViewModel)
-    factory { (project: Project) -> ProjectViewModel(project, get(), get()) }
+    factory { (project: Project) ->
+        ProjectViewModel(project, get(), get(), get())
+    }
 
     // Git dependencies
     factoryOf(::GetRepository)

@@ -1,5 +1,7 @@
 package org.bibletranslationtools.docscanner.ui.viewmodel
 
+import android.content.Context
+import android.net.Uri
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import docscanner.composeapp.generated.resources.Res
@@ -23,16 +25,25 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import okio.FileSystem
 import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
+import org.bibletranslationtools.docscanner.data.local.Settings
+import org.bibletranslationtools.docscanner.data.local.git.Profile
 import org.bibletranslationtools.docscanner.data.models.Alert
 import org.bibletranslationtools.docscanner.data.models.Pdf
 import org.bibletranslationtools.docscanner.data.models.Progress
 import org.bibletranslationtools.docscanner.data.models.Project
 import org.bibletranslationtools.docscanner.data.models.getName
+import org.bibletranslationtools.docscanner.data.models.getRepo
 import org.bibletranslationtools.docscanner.data.repository.PdfRepository
+import org.bibletranslationtools.docscanner.data.repository.PreferenceRepository
+import org.bibletranslationtools.docscanner.data.repository.getPref
 import org.bibletranslationtools.docscanner.ui.common.ConfirmAction
+import org.bibletranslationtools.docscanner.utils.FileUtils
+import org.bibletranslationtools.docscanner.utils.format
 import org.jetbrains.compose.resources.getString
+import org.json.JSONObject
 
 data class ProjectState(
+    val profile: Profile? = null,
     val pdfs: List<Pdf> = emptyList(),
     val confirmAction: ConfirmAction? = null,
     val alert: Alert? = null,
@@ -42,6 +53,7 @@ data class ProjectState(
 class ProjectViewModel(
     private val project: Project,
     private val directoryProvider: DirectoryProvider,
+    private val preferenceRepository: PreferenceRepository,
     private val pdfRepository: PdfRepository
 ) : ScreenModel {
 
@@ -57,6 +69,13 @@ class ProjectViewModel(
     private fun initialize() {
         screenModelScope.launch(Dispatchers.IO) {
             updateProgress(Progress(-1f, getString(Res.string.loading_pdfs)))
+
+            preferenceRepository.getPref<String>(Settings.KEY_PREF_PROFILE)?.let {
+                updateProfile(
+                    Profile.fromJSON(JSONObject(it))
+                )
+            }
+
             loadPdfs()
             updateProgress(null)
         }
@@ -66,9 +85,38 @@ class ProjectViewModel(
         updatePdfs(pdfRepository.getAll(project))
     }
 
-    fun insertPdf(pdf: Pdf) {
+    fun insertPdf(
+        context: Context,
+        pdfUri: Uri
+    ) {
         screenModelScope.launch(Dispatchers.IO) {
             updateProgress(Progress(-1f, getString(Res.string.creating_pdf)))
+
+            val date = Clock.System.now()
+                .toLocalDateTime(TimeZone.currentSystemDefault())
+            val fileName = "${date.format()}.pdf"
+
+            FileUtils.copyPdfFileToAppDirectory(
+                context,
+                directoryProvider,
+                pdfUri,
+                fileName,
+                project
+            )
+
+            val repo = project.getRepo(directoryProvider)
+            _state.value.profile?.gogsUser?.let { user ->
+                repo.setAuthor(user.username, user.email)
+            }
+            repo.commit()
+
+            val pdf = Pdf(
+                name = fileName,
+                size = FileUtils.getFileSize(directoryProvider, fileName, project),
+                created = date.toString(),
+                modified = date.toString(),
+                projectId = project.id
+            )
 
             try {
                 pdfRepository.insert(pdf)
@@ -84,6 +132,18 @@ class ProjectViewModel(
             loadPdfs()
             updateProgress(null)
         }
+    }
+
+    fun getFileUri(
+        context: Context,
+        fileName: String
+    ): Uri {
+        return FileUtils.getFileUri(
+            context,
+            directoryProvider,
+            fileName,
+            project
+        )
     }
 
     fun deletePdf(pdf: Pdf) {
@@ -167,6 +227,12 @@ class ProjectViewModel(
     private fun updateAlert(alert: Alert?) {
         _state.update {
             it.copy(alert = alert)
+        }
+    }
+
+    private fun updateProfile(profile: Profile?) {
+        _state.update {
+            it.copy(profile = profile)
         }
     }
 }
