@@ -121,6 +121,7 @@ class ProjectViewModel(
             try {
                 pdfRepository.insert(pdf)
             } catch (e: Exception) {
+                e.printStackTrace()
                 updateAlert(
                     Alert(getString(Res.string.create_pdf_failed)) {
                         updateAlert(null)
@@ -155,6 +156,7 @@ class ProjectViewModel(
                 FileSystem.SYSTEM.delete(file)
                 pdfRepository.delete(pdf)
             } catch (e: Exception) {
+                e.printStackTrace()
                 updateAlert(
                     Alert(getString(Res.string.delete_pdf_failed)) {
                         updateAlert(null)
@@ -170,22 +172,30 @@ class ProjectViewModel(
 
     fun renamePdf(pdf: Pdf, newName: String) {
         screenModelScope.launch(Dispatchers.IO) {
-            if (!pdf.name.equals(newName, true)) {
+            val newNameNormalized = if (!newName.endsWith(".pdf")) {
+                "$newName.pdf"
+            } else {
+                newName
+            }
+
+            if (!pdf.name.equals(newNameNormalized, true)) {
                 updateProgress(Progress(-1f, getString(Res.string.renaming_pdf)))
 
                 try {
                     val oldFile = directoryProvider.projectsDir / project.getName() / pdf.name
-                    val newFile = directoryProvider.projectsDir / project.getName() / newName
+                    val newFile = directoryProvider.projectsDir / project.getName() / newNameNormalized
                     FileSystem.SYSTEM.atomicMove(oldFile, newFile)
 
                     val now = Clock.System.now()
                         .toLocalDateTime(TimeZone.currentSystemDefault())
-                    val updatePdf = pdf.copy(
-                        name = newName,
+
+                    val newPdf = pdf.copy(
+                        name = newNameNormalized,
                         modified = now.toString()
                     )
-                    updatePdf(updatePdf)
+                    updatePdf(newPdf)
                 } catch (e: Exception) {
+                    e.printStackTrace()
                     updateAlert(
                         Alert(getString(Res.string.rename_pdf_failed)) {
                             updateAlert(null)
