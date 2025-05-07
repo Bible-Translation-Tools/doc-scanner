@@ -33,9 +33,9 @@ import docscanner.composeapp.generated.resources.Res
 import docscanner.composeapp.generated.resources.delete
 import docscanner.composeapp.generated.resources.rename
 import org.bibletranslationtools.docscanner.data.models.Pdf
+import org.bibletranslationtools.docscanner.utils.format
+import org.bibletranslationtools.docscanner.utils.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 @Composable
 fun PdfLayout(
@@ -80,7 +80,7 @@ fun PdfLayout(
                 Spacer(modifier = Modifier.height(7.7.dp))
 
                 Text(
-                    text = "Date: ${pdf.modified}",
+                    text = "Date: ${pdf.modified.toLocalDateTime().format()}",
                     style = MaterialTheme.typography.bodySmall
                 )
                 Spacer(modifier = Modifier.height(4.dp))

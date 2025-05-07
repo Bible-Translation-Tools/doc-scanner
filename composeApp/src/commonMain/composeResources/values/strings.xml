@@ -53,10 +53,15 @@
     <string name="git_rejected_remote_changed">[%1$s] Remote ref update was rejected,  because old object id on remote repository wasn\'t the same as defined expected old object.</string>
     <string name="git_up_to_date">[%1$s] remote ref is up to date</string>
     <string name="git_server_details">Server: %1$s</string>
-    <string name="inserting_pdf">Inserting PDF...</string>
-    <string name="insert_pdf_failed">PDF creation failed</string>
+    <string name="creating_project">Creating project...</string>
+    <string name="create_project_failed">Project creation failed</string>
+    <string name="deleting_project">Deleting project...</string>
+    <string name="delete_project_failed">Could not delete project</string>
+    <string name="creating_pdf">Inserting PDF...</string>
+    <string name="create_pdf_failed">PDF creation failed</string>
     <string name="deleting_pdf">Deleting PDF...</string>
     <string name="delete_pdf_failed">Could not delete PDF</string>
     <string name="renaming_pdf">Renaming PDF...</string>
     <string name="rename_pdf_failed">Could not rename PDF</string>
+    <string name="search">Search</string>
 </resources>

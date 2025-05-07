@@ -44,10 +44,11 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
+import org.bibletranslationtools.docscanner.data.local.git.Profile
 import org.bibletranslationtools.docscanner.data.models.Pdf
 import org.bibletranslationtools.docscanner.data.models.Project
-import org.bibletranslationtools.docscanner.data.models.getName
 import org.bibletranslationtools.docscanner.data.models.getRepo
+import org.bibletranslationtools.docscanner.data.models.getTitle
 import org.bibletranslationtools.docscanner.ui.common.AlertDialog
 import org.bibletranslationtools.docscanner.ui.common.ErrorScreen
 import org.bibletranslationtools.docscanner.ui.common.ExtraAction
@@ -58,13 +59,17 @@ import org.bibletranslationtools.docscanner.ui.screens.project.components.PdfLay
 import org.bibletranslationtools.docscanner.ui.screens.project.components.PdfRenameDialog
 import org.bibletranslationtools.docscanner.ui.viewmodel.ProjectViewModel
 import org.bibletranslationtools.docscanner.utils.FileUtils
+import org.bibletranslationtools.docscanner.utils.format
 import org.bibletranslationtools.docscanner.utils.showToast
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
-data class ProjectScreen(private val project: Project) : Screen {
+data class ProjectScreen(
+    private val project: Project,
+    private val profile: Profile?
+) : Screen {
     @Composable
     override fun Content() {
         val viewModel = koinScreenModel<ProjectViewModel> {
@@ -94,7 +99,7 @@ data class ProjectScreen(private val project: Project) : Screen {
 
                     val date = Clock.System.now()
                         .toLocalDateTime(TimeZone.currentSystemDefault())
-                    val fileName = "$date.pdf"
+                    val fileName = "${date.format()}.pdf"
 
                     FileUtils.copyPdfFileToAppDirectory(
                         context,
@@ -106,15 +111,17 @@ data class ProjectScreen(private val project: Project) : Screen {
 
                     uiScope.launch(Dispatchers.IO) {
                         val repo = project.getRepo(directoryProvider)
-                        repo.setAuthor("mxaln", "murmax82@gmail.com")
+                        profile?.gogsUser?.let { user ->
+                            repo.setAuthor(user.username, user.email)
+                        }
                         repo.commit()
                     }
 
                     val pdfEntity = Pdf(
                         name = fileName,
                         size = FileUtils.getFileSize(directoryProvider, fileName, project),
-                        created = date,
-                        modified = date,
+                        created = date.toString(),
+                        modified = date.toString(),
                         projectId = project.id
                     )
 
@@ -138,8 +145,8 @@ data class ProjectScreen(private val project: Project) : Screen {
             topBar = {
                 val extraActions = mutableListOf<ExtraAction>()
                 TopNavigationBar(
-                    title = project.getName(),
-                    profile = null,
+                    title = project.getTitle(),
+                    profile = profile,
                     page = PageType.PROJECT,
                     extraAction = extraActions.toTypedArray()
                 )
@@ -156,17 +163,21 @@ data class ProjectScreen(private val project: Project) : Screen {
                             it.printStackTrace()
                             context.showToast(it.message.toString())
                         }
-                    }, text = {
+                    },
+                    text = {
                         Text(
                             text = stringResource(Res.string.scan),
                             style = MaterialTheme.typography.titleMedium
                         )
-                    }, icon = {
+                    },
+                    icon = {
                         Icon(
                             painter = painterResource(Res.drawable.document_scanner),
                             contentDescription = "Scan"
                         )
-                    })
+                    },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                )
             }
         ) { paddingValue ->
 

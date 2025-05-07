@@ -1,5 +1,6 @@
 package org.bibletranslationtools.docscanner.ui.screens.home.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,6 +35,7 @@ import docscanner.composeapp.generated.resources.Res
 import docscanner.composeapp.generated.resources.delete
 import docscanner.composeapp.generated.resources.share
 import org.bibletranslationtools.docscanner.data.models.Project
+import org.bibletranslationtools.docscanner.ui.common.SingleLineText
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -70,12 +72,14 @@ fun ProjectLayout(
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "${project.language}_${project.book}",
+                SingleLineText(
+                    text = "${project.language.name} - ${project.book.name}",
                     style = MaterialTheme.typography.bodyLarge,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                SingleLineText(
+                    text = project.level.name,
+                    style = MaterialTheme.typography.bodyMedium,
                 )
             }
             Box {

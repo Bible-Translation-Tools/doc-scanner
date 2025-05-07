@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -23,6 +24,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -68,6 +73,9 @@ fun LoginDialog(
                     onValueChange = { username = it },
                     label = {
                         Text(stringResource(Res.string.username))
+                    },
+                    modifier = Modifier.semantics {
+                        contentType = ContentType.Username
                     }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -80,6 +88,10 @@ fun LoginDialog(
                     visualTransformation = if (showPassword) {
                         VisualTransformation.None
                     } else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        autoCorrectEnabled = false,
+                        keyboardType = KeyboardType.Password
+                    ),
                     trailingIcon = {
                         IconButton(onClick = { showPassword = !showPassword }) {
                             Icon(
@@ -89,6 +101,9 @@ fun LoginDialog(
                                 contentDescription = "Show Password"
                             )
                         }
+                    },
+                    modifier = Modifier.semantics {
+                        contentType = ContentType.Password
                     }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -101,7 +116,7 @@ fun LoginDialog(
                     Spacer(Modifier.width(6.dp))
                     Button(
                         onClick = {
-                            onLogin(username, password)
+                            onLogin(username.trim(), password)
                             onDismissRequest()
                         },
                         enabled = username.isNotEmpty() &&

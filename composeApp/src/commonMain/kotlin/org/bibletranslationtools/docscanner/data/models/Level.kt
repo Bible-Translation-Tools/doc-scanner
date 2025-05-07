@@ -8,7 +8,7 @@ data class Level(
     val id: Int = 0,
     val slug: String,
     val name: String
-)
+) : java.io.Serializable
 
 fun Level.toEntity(): LevelEntity {
     return LevelEntity(

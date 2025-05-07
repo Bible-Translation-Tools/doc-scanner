@@ -3,10 +3,10 @@ package org.bibletranslationtools.docscanner.ui.viewmodel
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import docscanner.composeapp.generated.resources.Res
+import docscanner.composeapp.generated.resources.create_pdf_failed
+import docscanner.composeapp.generated.resources.creating_pdf
 import docscanner.composeapp.generated.resources.delete_pdf_failed
 import docscanner.composeapp.generated.resources.deleting_pdf
-import docscanner.composeapp.generated.resources.insert_pdf_failed
-import docscanner.composeapp.generated.resources.inserting_pdf
 import docscanner.composeapp.generated.resources.loading_pdfs
 import docscanner.composeapp.generated.resources.rename_pdf_failed
 import docscanner.composeapp.generated.resources.renaming_pdf
@@ -57,24 +57,32 @@ class ProjectViewModel(
     private fun initialize() {
         screenModelScope.launch(Dispatchers.IO) {
             updateProgress(Progress(-1f, getString(Res.string.loading_pdfs)))
-
-            updatePdfs(pdfRepository.getAll(project))
+            loadPdfs()
+            updateProgress(null)
         }
+    }
+
+    private fun loadPdfs() {
+        updatePdfs(pdfRepository.getAll(project))
     }
 
     fun insertPdf(pdf: Pdf) {
         screenModelScope.launch(Dispatchers.IO) {
-            updateProgress(Progress(-1f, getString(Res.string.inserting_pdf)))
+            updateProgress(Progress(-1f, getString(Res.string.creating_pdf)))
 
             try {
                 pdfRepository.insert(pdf)
             } catch (e: Exception) {
                 updateAlert(
-                    Alert(getString(Res.string.insert_pdf_failed)) {
+                    Alert(getString(Res.string.create_pdf_failed)) {
                         updateAlert(null)
                     }
                 )
             }
+
+            updateProgress(Progress(-1f, getString(Res.string.loading_pdfs)))
+            loadPdfs()
+            updateProgress(null)
         }
     }
 
@@ -93,6 +101,10 @@ class ProjectViewModel(
                     }
                 )
             }
+
+            updateProgress(Progress(-1f, getString(Res.string.loading_pdfs)))
+            loadPdfs()
+            updateProgress(null)
         }
     }
 
@@ -110,7 +122,7 @@ class ProjectViewModel(
                         .toLocalDateTime(TimeZone.currentSystemDefault())
                     val updatePdf = pdf.copy(
                         name = newName,
-                        modified = now
+                        modified = now.toString()
                     )
                     updatePdf(updatePdf)
                 } catch (e: Exception) {
@@ -120,6 +132,10 @@ class ProjectViewModel(
                         }
                     )
                 }
+
+                updateProgress(Progress(-1f, getString(Res.string.loading_pdfs)))
+                loadPdfs()
+                updateProgress(null)
             }
         }
     }

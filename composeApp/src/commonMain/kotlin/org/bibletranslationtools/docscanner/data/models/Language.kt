@@ -16,7 +16,7 @@ data class Language(
     @SerialName("ld")
     val direction: String,
     val gw: Boolean
-) {
+) : java.io.Serializable {
 
     override fun toString(): String {
         val language = if (name != angName) {

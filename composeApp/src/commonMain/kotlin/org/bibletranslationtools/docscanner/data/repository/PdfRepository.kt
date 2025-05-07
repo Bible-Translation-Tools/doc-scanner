@@ -24,7 +24,9 @@ class PdfRepositoryImpl(db: MainDatabase): PdfRepository {
         return queries.add(
             entity.name,
             entity.size,
-            entity.projectId
+            entity.projectId,
+            entity.created,
+            entity.modified
         )
     }
 

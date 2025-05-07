@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -88,12 +89,15 @@ class HomeScreen : Screen {
                     modifier = Modifier.offset(0.dp, 0.dp),
                     onClick = {
                         showCreateProjectDialog = true
-                    }, content = {
+                    },
+                    content = {
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = "Create"
                         )
-                    })
+                    },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                )
             }
         ) { paddingValue ->
 
@@ -110,7 +114,7 @@ class HomeScreen : Screen {
                             project = project,
                             menuShown = expandedItemId == project.id,
                             onCardClick = {
-                                navigator.push(ProjectScreen(project))
+                                navigator.push(ProjectScreen(project, state.profile))
                             },
                             onMoreClick = {
                                 expandedItemId = if (expandedItemId != project.id) {

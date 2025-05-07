@@ -1,19 +1,17 @@
 package org.bibletranslationtools.docscanner.ui.screens.home.components
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -34,13 +32,7 @@ import org.bibletranslationtools.docscanner.data.models.Book
 import org.bibletranslationtools.docscanner.data.models.Language
 import org.bibletranslationtools.docscanner.data.models.Level
 import org.bibletranslationtools.docscanner.data.models.Project
-import org.example.dropdown.data.DefaultDropdownItem
-import org.example.dropdown.data.DropdownConfig
-import org.example.dropdown.data.search.SearchSettings
-import org.example.dropdown.data.selection.SingleItemContentConfig
-import org.example.project.ui.SearchableDropdown
 import org.jetbrains.compose.resources.stringResource
-import java.util.UUID
 
 @Composable
 fun CreateProjectDialog(
@@ -53,6 +45,10 @@ fun CreateProjectDialog(
     val language = remember { mutableStateOf<Language?>(null) }
     val book = remember { mutableStateOf<Book?>(null) }
     val level = remember { mutableStateOf<Level?>(null) }
+
+    LaunchedEffect(language.value) {
+        println(language.value?.name)
+    }
 
     Dialog(onDismissRequest = onDismissRequest) {
         Surface(
@@ -67,87 +63,38 @@ fun CreateProjectDialog(
                     style = MaterialTheme.typography.headlineSmall
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                SearchableDropdown(
+                SearchableComboBox(
                     items = languages,
-                    searchSettings = SearchSettings(
-                        searchProperties = listOf(
-                            Language::slug,
-                            Language::name,
-                            Language::angName
-                        ),
+                    selected = language,
+                    properties = listOf(
+                        Language::slug,
+                        Language::name,
+                        Language::angName
                     ),
-                    dropdownConfig = DropdownConfig(
-                        horizontalPadding = 8.dp,
-                        shape = RoundedCornerShape(8.dp),
-                        headerPlaceholder = { Text(stringResource(Res.string.select_language)) },
-                        headerBackgroundColor = MaterialTheme.colorScheme.background,
-                        contentBackgroundColor = MaterialTheme.colorScheme.background
-                    ),
-                    itemContentConfig = SingleItemContentConfig.Custom(
-                        content = { language, _ ->
-                            Row(
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                                    .height(32.dp)
-                            ) {
-                                Text(
-                                    text = language.name,
-                                    style = MaterialTheme.typography.titleLarge
-                                )
-                                Text(
-                                    text = language.slug,
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                            }
-                        }
-                    ),
-                    selectedItem = language
+                    titleProperty = Language::name,
+                    subtitleProperty = Language::slug,
+                    placeHolderText = stringResource(Res.string.select_language)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                SearchableDropdown(
+                SearchableComboBox(
                     items = books,
-                    searchSettings = SearchSettings(
-                        searchProperties = listOf(
-                            Book::slug,
-                            Book::name
-                        )
+                    selected = book,
+                    properties = listOf(
+                        Book::slug,
+                        Book::name
                     ),
-                    dropdownConfig = DropdownConfig(
-                        horizontalPadding = 8.dp,
-                        shape = RoundedCornerShape(8.dp),
-                        headerPlaceholder = { Text(stringResource(Res.string.select_book)) },
-                        headerBackgroundColor = MaterialTheme.colorScheme.background
-                    ),
-                    itemContentConfig = SingleItemContentConfig.Default(
-                        defaultItem = DefaultDropdownItem(
-                            title = Book::name,
-                            subtitle = Book::slug,
-                            withIcon = false
-                        )
-                    ),
-                    selectedItem = book
+                    titleProperty = Book::name,
+                    subtitleProperty = Book::slug,
+                    placeHolderText = stringResource(Res.string.select_book)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                SearchableDropdown(
+                SearchableComboBox(
                     items = levels,
-                    searchSettings = SearchSettings(
-                        searchEnabled = false
-                    ),
-                    dropdownConfig = DropdownConfig(
-                        horizontalPadding = 8.dp,
-                        shape = RoundedCornerShape(8.dp),
-                        headerPlaceholder = { Text(stringResource(Res.string.select_level)) },
-                        headerBackgroundColor = MaterialTheme.colorScheme.background
-                    ),
-                    itemContentConfig = SingleItemContentConfig.Default(
-                        defaultItem = DefaultDropdownItem(
-                            title = Level::name,
-                            subtitle = Level::slug,
-                            withIcon = false
-                        )
-                    ),
-                    selectedItem = level
+                    selected = level,
+                    searchEnabled = false,
+                    titleProperty = Level::name,
+                    subtitleProperty = Level::slug,
+                    placeHolderText = stringResource(Res.string.select_level),
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Row {
@@ -168,8 +115,8 @@ fun CreateProjectDialog(
                                             language = language,
                                             book = book,
                                             level = level,
-                                            created = now,
-                                            modified = now
+                                            created = now.toString(),
+                                            modified = now.toString()
                                         )
                                         onCreate(project)
                                         onDismissRequest()

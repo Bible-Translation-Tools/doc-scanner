@@ -4,6 +4,8 @@ import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import docscanner.composeapp.generated.resources.Res
 import docscanner.composeapp.generated.resources.confirm_generate_ssh_keys
+import docscanner.composeapp.generated.resources.creating_project
+import docscanner.composeapp.generated.resources.deleting_project
 import docscanner.composeapp.generated.resources.loading_projects
 import docscanner.composeapp.generated.resources.logged_out
 import docscanner.composeapp.generated.resources.logging_in
@@ -27,6 +29,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okio.FileSystem
 import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
+import org.bibletranslationtools.docscanner.data.local.Settings
 import org.bibletranslationtools.docscanner.data.local.git.GogsLogin
 import org.bibletranslationtools.docscanner.data.local.git.GogsLogout
 import org.bibletranslationtools.docscanner.data.local.git.Profile
@@ -98,7 +101,7 @@ class HomeViewModel(
         screenModelScope.launch(Dispatchers.IO) {
             updateProgress(Progress(-1f, getString(Res.string.loading_projects)))
 
-            preferenceRepository.getPref<String>("profile")?.let {
+            preferenceRepository.getPref<String>(Settings.KEY_PREF_PROFILE)?.let {
                 updateProfile(
                     Profile.fromJSON(
                         preferenceRepository,
@@ -111,10 +114,15 @@ class HomeViewModel(
             updateLanguages(languageRepository.getAll())
             updateBooks(bookRepository.getAll())
             updateLevels(levelRepository.getAll())
-            updateProjects(projectRepository.getAll())
+
+            loadProjects()
 
             updateProgress(null)
         }
+    }
+
+    private fun loadProjects() {
+        updateProjects(projectRepository.getAll())
     }
 
     fun onEvent(event: HomeEvent) {
@@ -128,14 +136,22 @@ class HomeViewModel(
 
     fun createProject(project: Project) {
         screenModelScope.launch(Dispatchers.IO) {
+            updateProgress(Progress(-1f, getString(Res.string.creating_project)))
+
             // initialize git repo
             project.getRepo(directoryProvider)
             projectRepository.insert(project)
+
+            updateProgress(Progress(-1f, getString(Res.string.loading_projects)))
+            loadProjects()
+            updateProgress(null)
         }
     }
 
     fun deleteProject(project: Project) {
         screenModelScope.launch(Dispatchers.IO) {
+            updateProgress(Progress(-1f, getString(Res.string.deleting_project)))
+
             val deleted = try {
                 FileSystem.SYSTEM.deleteRecursively(
                     directoryProvider.projectsDir / project.getName()
@@ -148,6 +164,11 @@ class HomeViewModel(
             if (deleted) {
                 projectRepository.delete(project)
             }
+
+            updateProgress(Progress(-1f, getString(Res.string.loading_projects)))
+            loadProjects()
+
+            updateProgress(null)
         }
     }
 
@@ -242,7 +263,7 @@ class HomeViewModel(
 
             val result = gogsLogin.execute(username, password)
             result.user?.let { user ->
-                val profileString = preferenceRepository.getPref<String>("profile")
+                val profileString = preferenceRepository.getPref<String>(Settings.KEY_PREF_PROFILE)
                 updateProfile(
                     Profile.fromJSON(
                         preferenceRepository,
@@ -259,6 +280,12 @@ class HomeViewModel(
                         doUploadProject(project, profile)
                     }
                 }
+            } ?: run {
+                updateAlert(
+                    Alert(getString(Res.string.login_failed)) {
+                        updateAlert(null)
+                    }
+                )
             }
 
             updateProgress(null)

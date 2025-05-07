@@ -2,6 +2,7 @@ package org.bibletranslationtools.docscanner.data.local.git
 
 import okio.FileSystem
 import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
+import org.bibletranslationtools.docscanner.data.local.Settings
 import org.bibletranslationtools.docscanner.data.repository.PreferenceRepository
 import org.bibletranslationtools.docscanner.data.repository.setPref
 import org.json.JSONException
@@ -99,14 +100,14 @@ class Profile(
      */
     private fun saveProfile() {
         val profileString = this.toJSON().toString()
-        prefs.setPref("profile", profileString)
+        prefs.setPref(Settings.KEY_PREF_PROFILE, profileString)
     }
 
     /**
      * Deletes the profile from the preferences
      */
     private fun deleteProfile() {
-        prefs.setPref<String>("profile", null)
+        prefs.setPref<String>(Settings.KEY_PREF_PROFILE, null)
         FileSystem.SYSTEM.deleteRecursively(directoryProvider.sshKeysDir)
     }
 

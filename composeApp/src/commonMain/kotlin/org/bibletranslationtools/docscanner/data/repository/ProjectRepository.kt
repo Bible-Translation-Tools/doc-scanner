@@ -23,7 +23,9 @@ class ProjectRepositoryImpl(db: MainDatabase) : ProjectRepository {
         return queries.add(
             entity.languageId,
             entity.bookId,
-            entity.levelId
+            entity.levelId,
+            entity.created,
+            entity.modified
         )
     }
 

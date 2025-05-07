@@ -1,6 +1,5 @@
 package org.bibletranslationtools.docscanner.data.models
 
-import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
 import org.bibletranslationtools.database.ProjectEntity
 import org.bibletranslationtools.database.ProjectWithData
@@ -13,9 +12,9 @@ data class Project(
     val language: Language,
     val book: Book,
     val level: Level,
-    val created: LocalDateTime,
-    val modified: LocalDateTime
-)
+    val created: String,
+    val modified: String
+) : java.io.Serializable
 
 fun Project.getRepo(directoryProvider: DirectoryProvider): Repo {
     val dir = directoryProvider.projectsDir / getName()
@@ -26,14 +25,18 @@ fun Project.getName(): String {
     return "${language.slug}_${book.slug}_${level.slug}"
 }
 
+fun Project.getTitle(): String {
+    return "${language.name} - ${book.name} - ${level.name}"
+}
+
 fun Project.toEntity(): ProjectEntity {
     return ProjectEntity(
         id = id.toLong(),
         languageId = language.id.toLong(),
         bookId = book.id.toLong(),
         levelId = level.id.toLong(),
-        created = created.toString(),
-        modified = modified.toString()
+        created = created,
+        modified = modified
     )
 }
 
@@ -60,7 +63,7 @@ fun ProjectWithData.toModel(): Project {
             slug = levelSlug!!,
             name = levelName!!
         ),
-        created = LocalDateTime.parse(created),
-        modified = LocalDateTime.parse(modified)
+        created = created,
+        modified = modified
     )
 }

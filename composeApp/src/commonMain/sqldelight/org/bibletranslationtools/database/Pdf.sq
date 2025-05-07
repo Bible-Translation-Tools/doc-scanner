@@ -3,8 +3,8 @@ CREATE TABLE PdfEntity (
     name TEXT NOT NULL,
     size TEXT NOT NULL,
     projectId INTEGER NOT NULL,
-    created TEXT DEFAULT (datetime('now')) NOT NULL,
-    modified TEXT DEFAULT (datetime('now')) NOT NULL,
+    created TEXT NOT NULL,
+    modified TEXT NOT NULL,
     FOREIGN KEY (projectId) REFERENCES ProjectEntity(id) ON DELETE CASCADE
 );
 
@@ -17,9 +17,11 @@ add:
 INSERT INTO PdfEntity(
     name,
     size,
-    projectId
+    projectId,
+    created,
+    modified
 )
-VALUES (?, ?, ?);
+VALUES (?, ?, ?, ?, ?);
 
 update:
 REPLACE
