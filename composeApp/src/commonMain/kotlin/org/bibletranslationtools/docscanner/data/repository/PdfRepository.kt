@@ -1,0 +1,47 @@
+package org.bibletranslationtools.docscanner.data.repository
+
+import org.bibletranslationtools.database.MainDatabase
+import org.bibletranslationtools.docscanner.data.models.Pdf
+import org.bibletranslationtools.docscanner.data.models.Project
+import org.bibletranslationtools.docscanner.data.models.toEntity
+import org.bibletranslationtools.docscanner.data.models.toModel
+
+interface PdfRepository {
+    fun getAll(project: Project): List<Pdf>
+    suspend fun insert(pdf: Pdf)
+    suspend fun delete(pdf: Pdf)
+    suspend fun update(pdf: Pdf)
+}
+
+class PdfRepositoryImpl(db: MainDatabase): PdfRepository {
+    private val queries = db.pdfQueries
+
+    override fun getAll(project: Project) =
+        queries.getAll(project.id.toLong()).executeAsList().map { it.toModel() }
+
+    override suspend fun insert(pdf: Pdf) {
+        val entity = pdf.toEntity()
+        return queries.add(
+            entity.name,
+            entity.size,
+            entity.projectId
+        )
+    }
+
+    override suspend fun delete(pdf: Pdf) {
+        val entity = pdf.toEntity()
+        return queries.delete(entity.id)
+    }
+
+    override suspend fun update(pdf: Pdf) {
+        val entity = pdf.toEntity()
+        return queries.update(
+            entity.id,
+            entity.name,
+            entity.size,
+            entity.projectId,
+            entity.created,
+            entity.modified
+        )
+    }
+}

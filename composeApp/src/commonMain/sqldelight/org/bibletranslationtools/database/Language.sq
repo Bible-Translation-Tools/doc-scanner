@@ -1,0 +1,36 @@
+CREATE TABLE LanguageEntity (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug TEXT NOT NULL,
+    name TEXT NOT NULL,
+    angName TEXT NOT NULL,
+    direction TEXT NOT NULL,
+    gw INTEGER NOT NULL
+);
+
+getAll:
+SELECT *
+FROM LanguageEntity;
+
+add:
+INSERT INTO LanguageEntity(
+    slug,
+    name,
+    angName,
+    direction,
+    gw
+)
+VALUES (?, ?, ?, ?, ?);
+
+update:
+REPLACE
+INTO LanguageEntity
+VALUES (?, ?, ?, ?, ?, ?);
+
+delete:
+DELETE
+FROM LanguageEntity
+WHERE id = :id;
+
+deleteAll:
+DELETE
+FROM LanguageEntity;

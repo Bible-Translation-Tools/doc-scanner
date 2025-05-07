@@ -1,0 +1,46 @@
+CREATE TABLE ProjectEntity (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    languageId INTEGER NOT NULL,
+    bookId INTEGER NOT NULL,
+    levelId INTEGER NOT NULL,
+    created TEXT DEFAULT (datetime('now')) NOT NULL,
+    modified TEXT DEFAULT (datetime('now')) NOT NULL,
+    FOREIGN KEY (languageId) REFERENCES LanguageEntity(id) ON DELETE CASCADE,
+    FOREIGN KEY (bookId) REFERENCES BookEntity(id) ON DELETE CASCADE,
+    FOREIGN KEY (levelId) REFERENCES LevelEntity(id) ON DELETE CASCADE
+);
+
+getAll:
+SELECT *
+FROM ProjectEntity;
+
+projectWithData:
+SELECT ProjectEntity.*,
+LanguageEntity.slug AS langSlug, LanguageEntity.name AS langName,
+LanguageEntity.angName AS langAngName, LanguageEntity.direction AS langDirection,
+LanguageEntity.gw AS langGw,
+BookEntity.slug AS bookSlug, BookEntity.name AS bookName,
+BookEntity.anthology AS bookAnthology, BookEntity.sort AS bookSort,
+LevelEntity.slug AS levelSlug, LevelEntity.name AS levelName
+FROM ProjectEntity
+LEFT JOIN LanguageEntity ON ProjectEntity.languageId = LanguageEntity.id
+LEFT JOIN BookEntity ON ProjectEntity.bookId = BookEntity.id
+LEFT JOIN LevelEntity ON ProjectEntity.levelId = LevelEntity.id;
+
+add:
+INSERT INTO ProjectEntity(
+    languageId,
+    bookId,
+    levelId
+)
+VALUES (?, ?, ?);
+
+update:
+REPLACE
+INTO ProjectEntity
+VALUES (?, ?, ?, ?, ?, ?);
+
+delete:
+DELETE
+FROM ProjectEntity
+WHERE id = :id;

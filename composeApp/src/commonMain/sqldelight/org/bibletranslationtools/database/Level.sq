@@ -1,0 +1,30 @@
+CREATE TABLE LevelEntity (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug TEXT NOT NULL,
+    name TEXT NOT NULL
+);
+
+getAll:
+SELECT *
+FROM LevelEntity;
+
+add:
+INSERT INTO LevelEntity(
+    slug,
+    name
+)
+VALUES (?, ?);
+
+update:
+REPLACE
+INTO LevelEntity
+VALUES (?, ?, ?);
+
+delete:
+DELETE
+FROM LevelEntity
+WHERE id = :id;
+
+deleteAll:
+DELETE
+FROM LevelEntity;

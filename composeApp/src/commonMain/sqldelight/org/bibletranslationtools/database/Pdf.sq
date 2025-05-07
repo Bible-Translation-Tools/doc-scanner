@@ -1,0 +1,32 @@
+CREATE TABLE PdfEntity (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    size TEXT NOT NULL,
+    projectId INTEGER NOT NULL,
+    created TEXT DEFAULT (datetime('now')) NOT NULL,
+    modified TEXT DEFAULT (datetime('now')) NOT NULL,
+    FOREIGN KEY (projectId) REFERENCES ProjectEntity(id) ON DELETE CASCADE
+);
+
+getAll:
+SELECT *
+FROM PdfEntity
+WHERE projectId = :projectId;
+
+add:
+INSERT INTO PdfEntity(
+    name,
+    size,
+    projectId
+)
+VALUES (?, ?, ?);
+
+update:
+REPLACE
+INTO PdfEntity
+VALUES (?, ?, ?, ?, ?, ?);
+
+delete:
+DELETE
+FROM PdfEntity
+WHERE id = :id;

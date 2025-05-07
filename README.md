@@ -1,82 +1,14 @@
- # Doc Scanner
+This is a Kotlin Multiplatform project targeting Android, iOS.
 
-**Doc Scanner** is a powerful and intuitive document scanning application designed for Android devices using Jetpack Compose. This app enables users to scan, manage, and share documents effortlessly, leveraging cutting-edge technologies to provide a robust and user-friendly experience.
+* `/composeApp` is for code that will be shared across your Compose Multiplatform applications.
+  It contains several subfolders:
+  - `commonMain` is for code that’s common for all targets.
+  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
+    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
+    `iosMain` would be the right folder for such calls.
 
-## Features
-
-- **High-Quality Scanning:** Capture documents with exceptional clarity using advanced image processing.
-- **User-Friendly Interface:** Simple and intuitive design powered by Jetpack Compose.
-- **Document Management:** Rename, remove, and organize your documents effortlessly.
-- **In-App PDF Viewing:** View scanned documents directly within the app.
-- **Easy Sharing:** Share your scanned documents via email, messaging apps, or other platforms.
-- **Offline Access:** Store and access all documents locally on your device.
-- **Batch Scanning:** Scan multiple pages in one go and save them as a single document.
-- **Object cleaning:** Remove or erase ant unwanted object from scanned documents using Google's ML Kit.
-- **Secure Storage:** Keep your documents secure and private.
-
-## Installation
-
-1. Download the latest Doc Scanner APK file from the [releases page](https://github.com/Bible-Translation-Tools/doc-scanner/releases).
-2. Enable installation from unknown sources in your device settings.
-3. Open the downloaded APK file and follow the on-screen instructions to install.
-
-## Usage
-
-1. **Launch the App:** Open Doc Scanner from your app drawer.
-2. **Scan Documents:** Use the camera to capture documents. The app will automatically enhance and crop the scanned images.
-3. **Manage Documents:** Organize your documents by renaming, removing, and viewing them directly in the app.
-4. **Share Documents:** Easily share your scanned documents via email, messaging apps, or other platforms.
+* `/iosApp` contains iOS applications. Even if you’re sharing your UI with Compose Multiplatform, 
+  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
 
 
-## Technology Used
-
-- **Kotlin:** Programming language for Android development.
-- **Jetpack Compose:** Modern toolkit for building native UIs.
-- **Room Database:** Provides an abstraction layer over SQLite for seamless database operations.
-- **DAO (Data Access Object):** Manages data access methods efficiently.
-- **Google's ML Kit:** Utilized for text recognition and image processing.
-
-## Getting Started
-
-**Prerequisites**
-
-- [**Android Studio**](https://developer.android.com/studio/)
-- Android device or emulator
-
-**Installation**
-
-1. **Clone the repository:**
-
-   ```sh
-   git clone https://github.com/Bible-Translation-Tools/doc-scanner.git
-
-2. **Open the project in Android Studio:**
-
-   ```sh
-   cd doc-scanner
-
-Open Android Studio and select "Open an existing Android Studio project." Navigate to the doc-scanner directory and open it.
-
-**Build and run the project:**
-
-Click the "Run" button in Android Studio to build and deploy the app on your connected device or emulator.
-
-## Contributing
-
-We welcome contributions from the community! If you'd like to contribute, please follow these steps:
-
-1. Fork the repository.
-2. Create a new branch for your feature or bug fix.
-3. Commit your changes and push them to your branch.
-4. Create a pull request with a detailed description of your changes.
-5. Please ensure your code adheres to the project's coding standards and includes appropriate tests.
-
-## Contact
-
-If you have any questions, suggestions, or feedback, please feel free to reach out:
-
-**Developer:** [WycliffeAssociates](https://wycliffeassociates.org/)  
-**Email:** info@wycliffeassociates.org
-
-## License
-This project is licensed under the MIT License. See the [LICENSE](https://github.com/Bible-Translation-Tools/doc-scanner/blob/main/LICENSE) for more details.
+Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…

@@ -1,0 +1,34 @@
+CREATE TABLE BookEntity (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug TEXT NOT NULL,
+    name TEXT NOT NULL,
+    anthology TEXT NOT NULL,
+    sort INTEGER NOT NULL
+);
+
+getAll:
+SELECT *
+FROM BookEntity;
+
+add:
+INSERT INTO BookEntity(
+    slug,
+    name,
+    anthology,
+    sort
+)
+VALUES (?, ?, ?, ?);
+
+update:
+REPLACE
+INTO BookEntity
+VALUES (?, ?, ?, ?, ?);
+
+delete:
+DELETE
+FROM BookEntity
+WHERE id = :id;
+
+deleteAll:
+DELETE
+FROM BookEntity;
