@@ -1,5 +1,6 @@
 package org.bibletranslationtools.docscanner.data.models
 
+import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable
 import org.bibletranslationtools.database.ProjectEntity
 import org.bibletranslationtools.database.ProjectWithData
@@ -17,7 +18,7 @@ data class Project(
 ) : java.io.Serializable
 
 fun Project.getRepo(directoryProvider: DirectoryProvider): Repo {
-    val dir = directoryProvider.projectsDir / getName()
+    val dir = Path(directoryProvider.projectsDir, getName())
     return Repo(dir.toString())
 }
 

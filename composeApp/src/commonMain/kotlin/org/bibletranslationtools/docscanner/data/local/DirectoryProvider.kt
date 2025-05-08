@@ -1,9 +1,9 @@
 package org.bibletranslationtools.docscanner.data.local
 
 import android.content.Context
-import okio.FileSystem
-import okio.Path
-import okio.Path.Companion.toPath
+import kotlinx.io.buffered
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 import org.bibletranslationtools.docscanner.utils.identificator
 
 interface DirectoryProvider {
@@ -50,6 +50,11 @@ interface DirectoryProvider {
     val privateKey: Path
 
     /**
+     * Returns the path to the share directory
+     */
+    val sharedDir: Path
+
+    /**
      * Checks if the ssh keys have already been generated
      * @return Boolean
      */
@@ -86,44 +91,53 @@ class DirectoryProviderImpl (private val context: Context) : DirectoryProvider {
     }
 
     override val internalAppDir: Path
-        get() = context.filesDir.absolutePath.toPath()
+        get() = Path(context.filesDir.absolutePath)
 
     override val externalAppDir: Path
         get() {
             val dir = context.getExternalFilesDir(null)
                 ?: throw NullPointerException("External storage is currently unavailable.")
-            return dir.absolutePath.toPath()
+            return Path(dir.absolutePath)
         }
 
     override val cacheDir: Path
-        get() = context.cacheDir.absolutePath.toPath()
+        get() = Path(context.cacheDir.absolutePath)
 
     override val projectsDir: Path
         get() {
-            val path = externalAppDir / "projects"
-            if (!FileSystem.SYSTEM.exists(path)) {
-                FileSystem.SYSTEM.createDirectories(path)
+            val path = Path(externalAppDir, "projects")
+            if (!SystemFileSystem.exists(path)) {
+                SystemFileSystem.createDirectories(path)
             }
             return path
         }
 
     override val sshKeysDir: Path
         get() {
-            val dir = internalAppDir / "ssh"
-            if (!FileSystem.SYSTEM.exists(dir)) {
-                FileSystem.SYSTEM.createDirectories(dir)
+            val dir = Path(internalAppDir, "ssh")
+            if (!SystemFileSystem.exists(dir)) {
+                SystemFileSystem.createDirectories(dir)
             }
             return dir
         }
 
     override val publicKey: Path
-        get() = sshKeysDir / "id_rsa.pub"
+        get() = Path(sshKeysDir, "id_rsa.pub")
 
     override val privateKey: Path
-        get() = sshKeysDir / "id_rsa"
+        get() = Path(sshKeysDir, "id_rsa")
+
+    override val sharedDir: Path
+        get() {
+            val dir = Path(externalAppDir, "shared")
+            if (!SystemFileSystem.exists(dir)) {
+                SystemFileSystem.createDirectories(dir)
+            }
+            return dir
+        }
 
     override fun hasSSHKeys(): Boolean {
-        return FileSystem.SYSTEM.exists(privateKey) && FileSystem.SYSTEM.exists(publicKey)
+        return SystemFileSystem.exists(privateKey) && SystemFileSystem.exists(publicKey)
     }
 
     override fun generateSSHKeys() {
@@ -153,8 +167,8 @@ class DirectoryProviderImpl (private val context: Context) : DirectoryProvider {
 
     override fun createTempDir(name: String?): Path {
         val tempName = name ?: System.currentTimeMillis().toString()
-        val tempDir = cacheDir / tempName
-        FileSystem.SYSTEM.createDirectories(tempDir)
+        val tempDir = Path(cacheDir, tempName)
+        SystemFileSystem.createDirectories(tempDir)
         return tempDir
     }
 
@@ -162,19 +176,15 @@ class DirectoryProviderImpl (private val context: Context) : DirectoryProvider {
         val directory = dir ?: cacheDir
         val actualSuffix = suffix ?: ""
         val fileName = "$prefix-${System.currentTimeMillis()}$actualSuffix"
-        val tempFile = directory / fileName
-        FileSystem.SYSTEM.write(tempFile) { /* create empty file */ }
+        val tempFile = Path(directory, fileName)
+        SystemFileSystem.sink(tempFile).buffered().use { /* create empty file */ }
         return tempFile
     }
 
     override fun clearCache() {
         try {
-            FileSystem.SYSTEM.list(cacheDir).forEach { path ->
-                if (FileSystem.SYSTEM.metadata(path).isDirectory) {
-                    FileSystem.SYSTEM.deleteRecursively(path)
-                } else {
-                    FileSystem.SYSTEM.delete(path)
-                }
+            SystemFileSystem.list(cacheDir).forEach { path ->
+                SystemFileSystem.delete(path)
             }
         } catch (e: Exception) {
             e.printStackTrace()

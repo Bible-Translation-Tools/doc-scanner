@@ -1,5 +1,6 @@
 package org.bibletranslationtools.docscanner.ui.screens.home
 
+import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,11 +16,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
@@ -53,12 +56,31 @@ class HomeScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
 
         val state by viewModel.state.collectAsStateWithLifecycle()
+        val event by viewModel.event.collectAsStateWithLifecycle(HomeEvent.Idle)
         var expandedItemId by remember { mutableStateOf<Int?>(null) }
 
         var showCreateProjectDialog by remember { mutableStateOf(false) }
         var showLoginDialog by remember { mutableStateOf(false) }
 
         val activity = LocalActivity.current
+        val context = LocalContext.current
+
+        LaunchedEffect(event) {
+            when (event) {
+                is HomeEvent.ProjectShared -> {
+                    val fileUri = (event as HomeEvent.ProjectShared).uri
+                    val shareIntent = Intent(Intent.ACTION_SEND)
+                    shareIntent.type = "application/zip"
+                    shareIntent.putExtra(Intent.EXTRA_STREAM, fileUri)
+                    shareIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    context.startActivity(
+                        Intent.createChooser(shareIntent, "share")
+                    )
+                    viewModel.onEvent(HomeEvent.Idle)
+                }
+                else -> {}
+            }
+        }
 
         BackHandler {
             activity?.finishAffinity()
@@ -123,28 +145,17 @@ class HomeScreen : Screen {
                             },
                             onUploadClick = {
                                 if (state.profile != null) {
-                                    viewModel.uploadProject(project)
+                                    viewModel.onEvent(HomeEvent.UploadProject(project))
                                 } else {
                                     viewModel.onEvent(HomeEvent.UpdateProject(project))
                                     showLoginDialog = true
                                 }
                             },
                             onShareClick = {
-//                                val fileUri = FileUtilities.getFileUri(
-//                                    context,
-//                                    directoryProvider,
-//                                    pdfEntity.name
-//                                )
-//                                val shareIntent = Intent(Intent.ACTION_SEND)
-//                                shareIntent.type = "application/pdf"
-//                                shareIntent.putExtra(Intent.EXTRA_STREAM, fileUri)
-//                                shareIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-//                                context.startActivity(
-//                                    Intent.createChooser(shareIntent, "share")
-//                                )
+                                viewModel.onEvent(HomeEvent.ShareProject(project, context))
                             },
                             onDeleteClick = {
-                                viewModel.deleteProject(project)
+                                viewModel.onEvent(HomeEvent.DeleteProject(project))
                             },
                             onDismissRequest = { expandedItemId = null }
                         )
@@ -157,7 +168,7 @@ class HomeScreen : Screen {
                     languages = state.languages,
                     books = state.books,
                     levels = state.levels,
-                    onCreate = { viewModel.createProject(it) },
+                    onCreate = { viewModel.onEvent(HomeEvent.CreateProject(it)) },
                     onDismissRequest = { showCreateProjectDialog = false }
                 )
             }

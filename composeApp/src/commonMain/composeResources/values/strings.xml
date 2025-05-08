@@ -63,5 +63,7 @@
     <string name="delete_pdf_failed">Could not delete PDF</string>
     <string name="renaming_pdf">Renaming PDF...</string>
     <string name="rename_pdf_failed">Could not rename PDF</string>
+    <string name="share_project_failed">Could not share project</string>
+    <string name="sharing_project">Sharing project...</string>
     <string name="search">Search</string>
 </resources>

@@ -2,8 +2,9 @@ package org.bibletranslationtools.docscanner.data.local.git
 
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.Session
-import okio.FileSystem
-import okio.buffer
+import kotlinx.io.buffered
+import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.readString
 import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
 import org.eclipse.jgit.transport.JschConfigSessionFactory
 import org.eclipse.jgit.transport.OpenSshConfig
@@ -28,10 +29,8 @@ class GitSessionFactory(
         val publicKey = directoryProvider.publicKey
         if (directoryProvider.hasSSHKeys()) {
             jsch.addIdentity(privateKey.toString())
-            FileSystem.SYSTEM.source(publicKey).use { source ->
-                source.buffer().inputStream().use { input ->
-                    jsch.setKnownHosts(input)
-                }
+            SystemFileSystem.source(publicKey).buffered().use { source ->
+                jsch.setKnownHosts(source.readString())
             }
         }
         return jsch

@@ -51,7 +51,8 @@ kotlin {
             implementation(libs.sqldelight.coroutines)
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
-            implementation(libs.okio)
+
+            implementation(libs.kotlinx.io)
         }
     }
 
@@ -95,9 +96,10 @@ dependencies {
     debugImplementation(compose.uiTooling)
 
     implementation(libs.androidx.preference.ktx)
-    implementation(libs.jgit)
     implementation(libs.gogs.client)
-    implementation(libs.okhttp)
+    implementation(libs.jgit)
+    implementation(libs.kzip)
     implementation(libs.mlKit.documentScanner)
+    implementation(libs.okhttp)
 }
 

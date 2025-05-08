@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:android="http://schemas.android.com/apk/res/android">
+<resources>
     <paths>
         <files-path name="files" path="." />
-        <external-files-path name="external_files" path="projects/" />
+        <external-files-path name="external_files" path="shared/" />
         <cache-path name="mlkit_docscan_ui_client" path="." />
     </paths>
 </resources>

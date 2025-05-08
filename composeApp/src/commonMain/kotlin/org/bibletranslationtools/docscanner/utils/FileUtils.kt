@@ -3,15 +3,19 @@ package org.bibletranslationtools.docscanner.utils
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
+import de.jonasbroeckmann.kzip.Zip
+import de.jonasbroeckmann.kzip.compressFrom
+import de.jonasbroeckmann.kzip.open
 import docscanner.composeapp.generated.resources.Res
-import okio.FileSystem
-import okio.Path
-import okio.buffer
-import okio.source
+import kotlinx.io.asSource
+import kotlinx.io.buffered
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.readString
 import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
 import org.bibletranslationtools.docscanner.data.models.Project
 import org.bibletranslationtools.docscanner.data.models.getName
-import org.jetbrains.compose.resources.ExperimentalResourceApi
+import java.io.File
 
 object FileUtils {
     fun copyPdfFileToAppDirectory(
@@ -22,13 +26,13 @@ object FileUtils {
         project: Project
     ) {
         context.contentResolver.openInputStream(pdfUri)?.use { inputStream ->
-            val projectDir = directoryProvider.projectsDir / project.getName()
-            val outputFile = projectDir / destinationFileName
+            val projectDir = Path(directoryProvider.projectsDir, project.getName())
+            val outputFile = Path(projectDir, destinationFileName)
 
-            FileSystem.SYSTEM.createDirectories(projectDir)
+            SystemFileSystem.createDirectories(projectDir)
 
-            FileSystem.SYSTEM.sink(outputFile).buffer().use { bufferedSink ->
-                inputStream.source().buffer().readAll(bufferedSink)
+            SystemFileSystem.sink(outputFile).buffered().use { sink ->
+                inputStream.asSource().buffered().transferTo(sink)
             }
         }
     }
@@ -38,9 +42,9 @@ object FileUtils {
         fileName: String,
         project: Project
     ): String {
-        val projectDir = directoryProvider.projectsDir / project.getName()
-        val file = projectDir / fileName
-        val fileSizeBytes = FileSystem.SYSTEM.metadata(file).size ?: 0
+        val projectDir = Path(directoryProvider.projectsDir, project.getName())
+        val file = Path(projectDir, fileName)
+        val fileSizeBytes = SystemFileSystem.metadataOrNull(file)?.size ?: 0
         val fileSizeKB = fileSizeBytes / 1024
         return if (fileSizeKB > 1024) {
             val fileSizeMB = fileSizeKB / 1024
@@ -50,30 +54,58 @@ object FileUtils {
         }
     }
 
-    fun getFileUri(
+    fun getPdfUri(
         context: Context,
         directoryProvider: DirectoryProvider,
         fileName: String,
         project: Project
     ): Uri {
-        val projectDir = directoryProvider.projectsDir / project.getName()
-        val file = projectDir / fileName
+        val projectDir = Path(directoryProvider.projectsDir, project.getName())
+        val file = Path(projectDir, fileName)
         return FileProvider.getUriForFile(
             context,
             "${context.packageName}.provider",
-            file.toFile()
+            File(file.toString())
         )
     }
 
-    @OptIn(ExperimentalResourceApi::class)
+    fun getPathUri(
+        context: Context,
+        path: Path
+    ): Uri {
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider",
+            File(path.toString())
+        )
+    }
+
     suspend fun loadAsset(name: String): String {
         val readBytes = Res.readBytes("files/$name")
         return String(readBytes)
     }
+
+    fun zipProject(
+        project: Project,
+        directoryProvider: DirectoryProvider
+    ): Path {
+        val projectDir = Path(directoryProvider.projectsDir, project.getName())
+        val zipFile = Path(directoryProvider.sharedDir, "${project.getName()}.zip")
+
+        Zip.open(
+            path = zipFile,
+            mode = Zip.Mode.Write,
+            level = Zip.CompressionLevel.BetterCompression
+        ).use { zip ->
+            zip.compressFrom(projectDir)
+        }
+
+        return zipFile
+    }
 }
 
 fun Path.readString(): String {
-    return FileSystem.SYSTEM.read(this) {
-        readUtf8()
+    return SystemFileSystem.source(this).buffered().use {
+        it.readString()
     }
 }

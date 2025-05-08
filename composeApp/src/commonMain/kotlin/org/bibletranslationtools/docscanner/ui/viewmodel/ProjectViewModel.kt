@@ -23,7 +23,8 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import okio.FileSystem
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
 import org.bibletranslationtools.docscanner.data.local.Settings
 import org.bibletranslationtools.docscanner.data.local.git.Profile
@@ -139,7 +140,7 @@ class ProjectViewModel(
         context: Context,
         fileName: String
     ): Uri {
-        return FileUtils.getFileUri(
+        return FileUtils.getPdfUri(
             context,
             directoryProvider,
             fileName,
@@ -152,8 +153,8 @@ class ProjectViewModel(
             updateProgress(Progress(-1f, getString(Res.string.deleting_pdf)))
 
             try {
-                val file = directoryProvider.projectsDir / project.getName() / pdf.name
-                FileSystem.SYSTEM.delete(file)
+                val file = Path(directoryProvider.projectsDir, project.getName(), pdf.name)
+                SystemFileSystem.delete(file)
                 pdfRepository.delete(pdf)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -182,9 +183,17 @@ class ProjectViewModel(
                 updateProgress(Progress(-1f, getString(Res.string.renaming_pdf)))
 
                 try {
-                    val oldFile = directoryProvider.projectsDir / project.getName() / pdf.name
-                    val newFile = directoryProvider.projectsDir / project.getName() / newNameNormalized
-                    FileSystem.SYSTEM.atomicMove(oldFile, newFile)
+                    val oldFile = Path(
+                        directoryProvider.projectsDir,
+                        project.getName(),
+                        pdf.name
+                    )
+                    val newFile = Path(
+                        directoryProvider.projectsDir,
+                        project.getName(),
+                        newNameNormalized
+                    )
+                    SystemFileSystem.atomicMove(oldFile, newFile)
 
                     val now = Clock.System.now()
                         .toLocalDateTime(TimeZone.currentSystemDefault())

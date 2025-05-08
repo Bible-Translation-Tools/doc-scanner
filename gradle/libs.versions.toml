@@ -18,10 +18,11 @@ junit = "4.13.2"
 koin = "4.0.2"
 kotlin = "2.1.20"
 kotlinxDatetitme = "0.6.2"
+kotlinxIo = "0.7.0"
 kotlinxSerializationJson = "1.8.0"
+kzip = "1.1.0"
 mlKit = "16.0.0-beta1"
 okhttp = "4.12.0"
-okio = "3.11.0"
 searchableDropdown = "1.1.0"
 sqlDelight = "2.0.2"
 voyagerNavigator = "1.1.0-beta03"
@@ -48,10 +49,11 @@ koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin"
 koin-compose = { group = "io.insert-koin", name = "koin-compose", version.ref = "koin" }
 koin-compose-viewmodel = { group = "io.insert-koin", name = "koin-compose-viewmodel", version.ref = "koin" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetitme" }
+kotlinx-io = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinxIo" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+kzip = { module = "de.jonasbroeckmann.kzip:kzip", version.ref = "kzip" }
 mlKit-documentScanner = { group = "com.google.android.gms", name="play-services-mlkit-document-scanner", version.ref = "mlKit" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
-okio = { group = "com.squareup.okio", name = "okio", version.ref = "okio" }
 searchableDropdown = { module = "io.github.user154lt:searchable-dropdown", version.ref = "searchableDropdown" }
 sqldeight-android = { group = "app.cash.sqldelight", name = "android-driver", version.ref = "sqlDelight" }
 sqldelight-coroutines = { group = "app.cash.sqldelight", name = "coroutines-extensions", version.ref = "sqlDelight" }
