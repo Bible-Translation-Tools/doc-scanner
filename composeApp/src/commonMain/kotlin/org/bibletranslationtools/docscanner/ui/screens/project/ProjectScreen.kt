@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +42,7 @@ import org.bibletranslationtools.docscanner.data.models.Pdf
 import org.bibletranslationtools.docscanner.data.models.Project
 import org.bibletranslationtools.docscanner.data.models.getTitle
 import org.bibletranslationtools.docscanner.ui.common.AlertDialog
+import org.bibletranslationtools.docscanner.ui.common.ConfirmDialog
 import org.bibletranslationtools.docscanner.ui.common.ErrorScreen
 import org.bibletranslationtools.docscanner.ui.common.ExtraAction
 import org.bibletranslationtools.docscanner.ui.common.PageType
@@ -48,6 +50,7 @@ import org.bibletranslationtools.docscanner.ui.common.ProgressDialog
 import org.bibletranslationtools.docscanner.ui.common.TopNavigationBar
 import org.bibletranslationtools.docscanner.ui.screens.project.components.PdfLayout
 import org.bibletranslationtools.docscanner.ui.screens.project.components.PdfRenameDialog
+import org.bibletranslationtools.docscanner.ui.viewmodel.ProjectEvent
 import org.bibletranslationtools.docscanner.ui.viewmodel.ProjectViewModel
 import org.bibletranslationtools.docscanner.utils.showToast
 import org.jetbrains.compose.resources.painterResource
@@ -69,9 +72,24 @@ data class ProjectScreen(
         val context = LocalContext.current
 
         val state by viewModel.state.collectAsStateWithLifecycle()
+        val event by viewModel.event.collectAsStateWithLifecycle(ProjectEvent.Idle)
         var expandedItemId by remember { mutableStateOf<Int?>(null) }
 
         // val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
+
+        LaunchedEffect(event) {
+            when (event) {
+                is ProjectEvent.PdfOpened -> {
+                    viewModel.onEvent(ProjectEvent.Idle)
+
+                    val uri = (event as ProjectEvent.PdfOpened).uri
+                    val browserIntent = Intent(Intent.ACTION_VIEW, uri)
+                    browserIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    context.startActivity(browserIntent)
+                }
+                else -> Unit
+            }
+        }
 
         val scannerLauncher = rememberLauncherForActivityResult(
             contract = StartIntentSenderForResult()
@@ -81,7 +99,7 @@ data class ProjectScreen(
 
                 scanningResult?.pdf?.let { pdf ->
                     Log.d("pdfName", pdf.uri.lastPathSegment.toString())
-                    viewModel.insertPdf(context, pdf.uri)
+                    viewModel.onEvent(ProjectEvent.CreatePdf(pdf.uri, context))
                 }
             }
         }
@@ -150,10 +168,7 @@ data class ProjectScreen(
                             pdf = pdf,
                             menuShown = expandedItemId == pdf.id,
                             onCardClick = {
-                                val getFileUri = viewModel.getFileUri(context, pdf.name)
-                                val browserIntent = Intent(Intent.ACTION_VIEW, getFileUri)
-                                browserIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                context.startActivity(browserIntent)
+                                viewModel.onEvent(ProjectEvent.OpenPdf(pdf, context))
                             },
                             onMoreClick = {
                                 expandedItemId = if (expandedItemId != pdf.id) {
@@ -164,7 +179,7 @@ data class ProjectScreen(
                                 renamePdf = pdf
                             },
                             onDeleteClick = {
-                                viewModel.deletePdf(pdf)
+                                viewModel.onEvent(ProjectEvent.DeletePdf(pdf))
                             },
                             onDismissRequest = { expandedItemId = null }
                         )
@@ -180,10 +195,19 @@ data class ProjectScreen(
                 AlertDialog(it.message, it.onClosed)
             }
 
+            state.confirmAction?.let {
+                ConfirmDialog(
+                    message = it.message,
+                    onConfirm = it.onConfirm,
+                    onCancel = it.onCancel,
+                    onDismiss = it.onCancel
+                )
+            }
+
             renamePdf?.let { pdf ->
                 PdfRenameDialog(
                     name = pdf.name,
-                    onRename = { viewModel.renamePdf(pdf, it) },
+                    onRename = { viewModel.onEvent(ProjectEvent.RenamePdf(pdf, it)) },
                     onDismissRequest = { renamePdf = null }
                 )
             }

@@ -7,16 +7,19 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import docscanner.composeapp.generated.resources.Res
 import docscanner.composeapp.generated.resources.create_pdf_failed
 import docscanner.composeapp.generated.resources.creating_pdf
+import docscanner.composeapp.generated.resources.delete_pdf_confirm
 import docscanner.composeapp.generated.resources.delete_pdf_failed
 import docscanner.composeapp.generated.resources.deleting_pdf
 import docscanner.composeapp.generated.resources.loading_pdfs
 import docscanner.composeapp.generated.resources.rename_pdf_failed
 import docscanner.composeapp.generated.resources.renaming_pdf
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -51,6 +54,15 @@ data class ProjectState(
     val progress: Progress? = null,
 )
 
+sealed class ProjectEvent {
+    data object Idle : ProjectEvent()
+    data class CreatePdf(val pdfUri: Uri, val context: Context): ProjectEvent()
+    data class RenamePdf(val pdf: Pdf, val newName: String) : ProjectEvent()
+    data class DeletePdf(val pdf: Pdf): ProjectEvent()
+    data class OpenPdf(val pdf: Pdf, val context: Context): ProjectEvent()
+    data class PdfOpened(val uri: Uri): ProjectEvent()
+}
+
 class ProjectViewModel(
     private val project: Project,
     private val directoryProvider: DirectoryProvider,
@@ -66,6 +78,19 @@ class ProjectViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = ProjectState()
         )
+
+    private val _event: Channel<ProjectEvent> = Channel()
+    val event = _event.receiveAsFlow()
+
+    fun onEvent(event: ProjectEvent) {
+        when (event) {
+            is ProjectEvent.CreatePdf -> createPdf(event.pdfUri, event.context)
+            is ProjectEvent.RenamePdf -> renamePdf(event.pdf, event.newName)
+            is ProjectEvent.DeletePdf -> deletePdf(event.pdf)
+            is ProjectEvent.OpenPdf -> openPdf(event.pdf, event.context)
+            else -> resetChannel()
+        }
+    }
 
     private fun initialize() {
         screenModelScope.launch(Dispatchers.IO) {
@@ -86,9 +111,9 @@ class ProjectViewModel(
         updatePdfs(pdfRepository.getAll(project))
     }
 
-    fun insertPdf(
-        context: Context,
-        pdfUri: Uri
+    private fun createPdf(
+        pdfUri: Uri,
+        context: Context
     ) {
         screenModelScope.launch(Dispatchers.IO) {
             updateProgress(Progress(-1f, getString(Res.string.creating_pdf)))
@@ -136,42 +161,61 @@ class ProjectViewModel(
         }
     }
 
-    fun getFileUri(
+    private fun openPdf(
+        pdf: Pdf,
         context: Context,
-        fileName: String
-    ): Uri {
-        return FileUtils.getPdfUri(
-            context,
-            directoryProvider,
-            fileName,
-            project
-        )
-    }
-
-    fun deletePdf(pdf: Pdf) {
-        screenModelScope.launch(Dispatchers.IO) {
-            updateProgress(Progress(-1f, getString(Res.string.deleting_pdf)))
-
-            try {
-                val file = Path(directoryProvider.projectsDir, project.getName(), pdf.name)
-                SystemFileSystem.delete(file)
-                pdfRepository.delete(pdf)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                updateAlert(
-                    Alert(getString(Res.string.delete_pdf_failed)) {
-                        updateAlert(null)
-                    }
-                )
-            }
-
-            updateProgress(Progress(-1f, getString(Res.string.loading_pdfs)))
-            loadPdfs()
-            updateProgress(null)
+    ) {
+        screenModelScope.launch {
+            val uri = FileUtils.getPdfUri(
+                context,
+                directoryProvider,
+                pdf.name,
+                project
+            )
+            _event.send(ProjectEvent.PdfOpened(uri))
         }
     }
 
-    fun renamePdf(pdf: Pdf, newName: String) {
+    private fun deletePdf(pdf: Pdf) {
+        screenModelScope.launch {
+            updateConfirmAction(
+                ConfirmAction(
+                    message = getString(Res.string.delete_pdf_confirm),
+                    onConfirm = {
+                        screenModelScope.launch {
+                            updateProgress(Progress(-1f, getString(Res.string.deleting_pdf)))
+                            doDeletePdf(pdf)
+
+                            updateProgress(Progress(-1f, getString(Res.string.loading_pdfs)))
+                            loadPdfs()
+
+                            updateProgress(null)
+                        }
+                    },
+                    onCancel = {
+                        updateConfirmAction(null)
+                    }
+                )
+            )
+        }
+    }
+
+    private suspend fun doDeletePdf(pdf: Pdf) {
+        try {
+            val file = Path(directoryProvider.projectsDir, project.getName(), pdf.name)
+            SystemFileSystem.delete(file)
+            pdfRepository.delete(pdf)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            updateAlert(
+                Alert(getString(Res.string.delete_pdf_failed)) {
+                    updateAlert(null)
+                }
+            )
+        }
+    }
+
+    private fun renamePdf(pdf: Pdf, newName: String) {
         screenModelScope.launch(Dispatchers.IO) {
             val newNameNormalized = if (!newName.endsWith(".pdf")) {
                 "$newName.pdf"
@@ -252,6 +296,12 @@ class ProjectViewModel(
     private fun updateProfile(profile: Profile?) {
         _state.update {
             it.copy(profile = profile)
+        }
+    }
+
+    private fun resetChannel() {
+        screenModelScope.launch {
+            _event.send(ProjectEvent.Idle)
         }
     }
 }

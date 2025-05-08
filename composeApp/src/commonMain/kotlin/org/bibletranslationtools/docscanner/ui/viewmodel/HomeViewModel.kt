@@ -7,6 +7,7 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import docscanner.composeapp.generated.resources.Res
 import docscanner.composeapp.generated.resources.confirm_generate_ssh_keys
 import docscanner.composeapp.generated.resources.creating_project
+import docscanner.composeapp.generated.resources.delete_project_confirm
 import docscanner.composeapp.generated.resources.deleting_project
 import docscanner.composeapp.generated.resources.loading_projects
 import docscanner.composeapp.generated.resources.logged_out
@@ -57,6 +58,7 @@ import org.bibletranslationtools.docscanner.data.repository.getPref
 import org.bibletranslationtools.docscanner.data.repository.setPref
 import org.bibletranslationtools.docscanner.ui.common.ConfirmAction
 import org.bibletranslationtools.docscanner.utils.FileUtils
+import org.bibletranslationtools.docscanner.utils.deleteRecursively
 import org.jetbrains.compose.resources.getString
 import org.json.JSONObject
 
@@ -182,26 +184,41 @@ class HomeViewModel(
     }
 
     private fun deleteProject(project: Project) {
-        screenModelScope.launch(Dispatchers.IO) {
-            updateProgress(Progress(-1f, getString(Res.string.deleting_project)))
+        screenModelScope.launch {
+            updateConfirmAction(
+                ConfirmAction(
+                    message = getString(Res.string.delete_project_confirm),
+                    onConfirm = {
+                        screenModelScope.launch {
+                            updateProgress(Progress(-1f, getString(Res.string.deleting_project)))
+                            doDeleteProject(project)
 
-            val deleted = try {
-                SystemFileSystem.delete(
-                    Path(directoryProvider.projectsDir, project.getName())
+                            updateProgress(Progress(-1f, getString(Res.string.loading_projects)))
+                            loadProjects()
+
+                            updateProgress(null)
+                        }
+                    },
+                    onCancel = {
+                        updateConfirmAction(null)
+                    }
                 )
-                true
-            } catch (e: Exception) {
-                false
-            }
+            )
+        }
+    }
 
-            if (deleted) {
-                projectRepository.delete(project)
-            }
+    private suspend fun doDeleteProject(project: Project) {
+        val deleted = try {
+            SystemFileSystem.deleteRecursively(
+                Path(directoryProvider.projectsDir, project.getName())
+            )
+            true
+        } catch (e: Exception) {
+            false
+        }
 
-            updateProgress(Progress(-1f, getString(Res.string.loading_projects)))
-            loadProjects()
-
-            updateProgress(null)
+        if (deleted) {
+            projectRepository.delete(project)
         }
     }
 
@@ -333,7 +350,7 @@ class HomeViewModel(
                 gogsLogout.execute(it)
                 it.logout()
                 preferenceRepository.setPref<String>(Settings.KEY_PREF_PROFILE, null)
-                SystemFileSystem.delete(directoryProvider.sshKeysDir)
+                SystemFileSystem.deleteRecursively(directoryProvider.sshKeysDir)
 
                 updateProfile(null)
 

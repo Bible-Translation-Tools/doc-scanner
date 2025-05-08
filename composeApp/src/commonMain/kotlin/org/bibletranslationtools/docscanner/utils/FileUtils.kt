@@ -9,6 +9,7 @@ import de.jonasbroeckmann.kzip.open
 import docscanner.composeapp.generated.resources.Res
 import kotlinx.io.asSource
 import kotlinx.io.buffered
+import kotlinx.io.files.FileSystem
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.readString
@@ -108,4 +109,14 @@ fun Path.readString(): String {
     return SystemFileSystem.source(this).buffered().use {
         it.readString()
     }
+}
+
+fun FileSystem.deleteRecursively(path: Path, mustExist: Boolean = false) {
+    val isDirectory = metadataOrNull(path)?.isDirectory ?: false
+    if (isDirectory) {
+        for (child in list(path)) {
+            deleteRecursively(child, mustExist)
+        }
+    }
+    delete(path, mustExist)
 }

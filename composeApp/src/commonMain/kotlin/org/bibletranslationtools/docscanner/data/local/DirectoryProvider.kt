@@ -4,6 +4,7 @@ import android.content.Context
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import org.bibletranslationtools.docscanner.utils.deleteRecursively
 import org.bibletranslationtools.docscanner.utils.identificator
 
 interface DirectoryProvider {
@@ -184,7 +185,7 @@ class DirectoryProviderImpl (private val context: Context) : DirectoryProvider {
     override fun clearCache() {
         try {
             SystemFileSystem.list(cacheDir).forEach { path ->
-                SystemFileSystem.delete(path)
+                SystemFileSystem.deleteRecursively(path)
             }
         } catch (e: Exception) {
             e.printStackTrace()

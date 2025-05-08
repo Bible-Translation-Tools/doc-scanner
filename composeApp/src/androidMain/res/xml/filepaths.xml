@@ -2,7 +2,8 @@
 <resources>
     <paths>
         <files-path name="files" path="." />
-        <external-files-path name="external_files" path="shared/" />
+        <external-files-path name="shared_files" path="shared/" />
+        <external-files-path name="project_files" path="projects/" />
         <cache-path name="mlkit_docscan_ui_client" path="." />
     </paths>
 </resources>
