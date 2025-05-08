@@ -73,8 +73,8 @@ android {
         applicationId = "org.bibletranslationtools.docscanner"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 4
-        versionName = "0.3.1"
+        versionCode = 5
+        versionName = "0.3.2"
     }
     packaging {
         resources {
