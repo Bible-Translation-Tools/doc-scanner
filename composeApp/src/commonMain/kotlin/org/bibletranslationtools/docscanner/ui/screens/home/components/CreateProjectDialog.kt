@@ -11,13 +11,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.kanyidev.searchable_dropdown.LargeSearchableDropdownMenu
 import docscanner.composeapp.generated.resources.Res
 import docscanner.composeapp.generated.resources.cancel
 import docscanner.composeapp.generated.resources.create_project
@@ -40,19 +43,22 @@ fun CreateProjectDialog(
     books: List<Book>,
     levels: List<Level>,
     onCreate: (Project) -> Unit,
-    onDismissRequest: () -> Unit,
+    onDismissRequest: () -> Unit
 ) {
-    val language = remember { mutableStateOf<Language?>(null) }
-    val book = remember { mutableStateOf<Book?>(null) }
-    val level = remember { mutableStateOf<Level?>(null) }
+    var language by remember { mutableStateOf<Language?>(null) }
+    var book by remember { mutableStateOf<Book?>(null) }
+    var level by remember { mutableStateOf<Level?>(null) }
 
-    LaunchedEffect(language.value) {
-        println(language.value?.name)
-    }
-
-    Dialog(onDismissRequest = onDismissRequest) {
+    Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
+    ) {
         Surface(
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.padding(20.dp),
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),
@@ -63,38 +69,34 @@ fun CreateProjectDialog(
                     style = MaterialTheme.typography.headlineSmall
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                SearchableComboBox(
-                    items = languages,
-                    selected = language,
-                    properties = listOf(
-                        Language::slug,
-                        Language::name,
-                        Language::angName
-                    ),
-                    titleProperty = Language::name,
-                    subtitleProperty = Language::slug,
-                    placeHolderText = stringResource(Res.string.select_language)
+                LargeSearchableDropdownMenu(
+                    options = languages,
+                    selectedOption = language,
+                    onItemSelected = { language = it },
+                    placeholder = stringResource(Res.string.select_language),
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    fieldLabelTextStyle = MaterialTheme.typography.bodyMedium,
+                    placeholderTextStyle = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                SearchableComboBox(
-                    items = books,
-                    selected = book,
-                    properties = listOf(
-                        Book::slug,
-                        Book::name
-                    ),
-                    titleProperty = Book::name,
-                    subtitleProperty = Book::slug,
-                    placeHolderText = stringResource(Res.string.select_book)
+                LargeSearchableDropdownMenu(
+                    options = books,
+                    selectedOption = book,
+                    onItemSelected = { book = it },
+                    placeholder = stringResource(Res.string.select_book),
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    fieldLabelTextStyle = MaterialTheme.typography.bodyMedium,
+                    placeholderTextStyle = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                SearchableComboBox(
-                    items = levels,
-                    selected = level,
-                    searchEnabled = false,
-                    titleProperty = Level::name,
-                    subtitleProperty = Level::slug,
-                    placeHolderText = stringResource(Res.string.select_level),
+                LargeSearchableDropdownMenu(
+                    options = levels,
+                    selectedOption = level,
+                    onItemSelected = { level = it },
+                    placeholder = stringResource(Res.string.select_level),
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    fieldLabelTextStyle = MaterialTheme.typography.bodyMedium,
+                    placeholderTextStyle = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Row {
@@ -106,15 +108,15 @@ fun CreateProjectDialog(
                     Spacer(Modifier.width(6.dp))
                     Button(
                         onClick = {
-                            language.value?.let { language ->
-                                book.value?.let { book ->
-                                    level.value?.let { level ->
+                            language?.let { ln ->
+                                book?.let { bk ->
+                                    level?.let { lv ->
                                         val now = Clock.System.now()
                                             .toLocalDateTime(TimeZone.currentSystemDefault())
                                         val project = Project(
-                                            language = language,
-                                            book = book,
-                                            level = level,
+                                            language = ln,
+                                            book = bk,
+                                            level = lv,
                                             created = now.toString(),
                                             modified = now.toString()
                                         )
@@ -124,9 +126,7 @@ fun CreateProjectDialog(
                                 }
                             }
                         },
-                        enabled = language.value != null
-                                && book.value != null
-                                && level.value != null
+                        enabled = language != null && book != null && level != null
                     ) {
                         Text(stringResource(Res.string.ok))
                     }

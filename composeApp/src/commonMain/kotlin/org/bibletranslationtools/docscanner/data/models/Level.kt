@@ -8,7 +8,11 @@ data class Level(
     val id: Int = 0,
     val slug: String,
     val name: String
-) : java.io.Serializable
+) : java.io.Serializable {
+    override fun toString(): String {
+        return name
+    }
+}
 
 fun Level.toEntity(): LevelEntity {
     return LevelEntity(
