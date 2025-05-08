@@ -33,19 +33,19 @@ jobs:
         uses: r0adkll/sign-android-release@v1
         id: sign_app
         with:
-          releaseDirectory: app/build/outputs/apk/release
+          releaseDirectory: composeApp/release
           signingKeyBase64: ${{ secrets.KEY_STORE }}
           alias: ${{ secrets.KEY_STORE_ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASS }}
           keyPassword: ${{ secrets.KEY_STORE_PASS }}
         env:
-          BUILD_TOOLS_VERSION: "34.0.0"
+          BUILD_TOOLS_VERSION: "35.0.0"
 
       - name: Upload binary to release
         uses: svenstaro/upload-release-action@v2
         with:
           file: ${{ steps.sign_app.outputs.signedReleaseFile }}
-          asset_name: sun-${{ github.ref_name }}.apk
+          asset_name: doc-scanner-${{ github.ref_name }}.apk
           overwrite: true
           prerelease: true
           draft: true
