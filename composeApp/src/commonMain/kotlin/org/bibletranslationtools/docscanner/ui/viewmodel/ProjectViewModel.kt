@@ -28,26 +28,24 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
-import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
-import org.bibletranslationtools.docscanner.data.local.Settings
-import org.bibletranslationtools.docscanner.data.local.git.Profile
+import org.bibletranslationtools.docscanner.api.HtrUser
+import org.bibletranslationtools.docscanner.api.TranscriberApi
 import org.bibletranslationtools.docscanner.data.models.Alert
 import org.bibletranslationtools.docscanner.data.models.Pdf
 import org.bibletranslationtools.docscanner.data.models.Progress
 import org.bibletranslationtools.docscanner.data.models.Project
 import org.bibletranslationtools.docscanner.data.models.getName
 import org.bibletranslationtools.docscanner.data.models.getRepo
+import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
 import org.bibletranslationtools.docscanner.data.repository.PdfRepository
 import org.bibletranslationtools.docscanner.data.repository.PreferenceRepository
-import org.bibletranslationtools.docscanner.data.repository.getPref
 import org.bibletranslationtools.docscanner.ui.common.ConfirmAction
 import org.bibletranslationtools.docscanner.utils.FileUtils
 import org.bibletranslationtools.docscanner.utils.format
 import org.jetbrains.compose.resources.getString
-import org.json.JSONObject
 
 data class ProjectState(
-    val profile: Profile? = null,
+    val user: HtrUser? = null,
     val pdfs: List<Pdf> = emptyList(),
     val confirmAction: ConfirmAction? = null,
     val alert: Alert? = null,
@@ -67,7 +65,8 @@ class ProjectViewModel(
     private val project: Project,
     private val directoryProvider: DirectoryProvider,
     private val preferenceRepository: PreferenceRepository,
-    private val pdfRepository: PdfRepository
+    private val pdfRepository: PdfRepository,
+    private val transcriberApi: TranscriberApi
 ) : ScreenModel {
 
     private var _state = MutableStateFlow(ProjectState())
@@ -96,11 +95,7 @@ class ProjectViewModel(
         screenModelScope.launch(Dispatchers.IO) {
             updateProgress(Progress(-1f, getString(Res.string.loading_pdfs)))
 
-            preferenceRepository.getPref<String>(Settings.KEY_PREF_PROFILE)?.let {
-                updateProfile(
-                    Profile.fromJSON(JSONObject(it))
-                )
-            }
+            updateUser(transcriberApi.getUser())
 
             loadPdfs()
             updateProgress(null)
@@ -131,8 +126,8 @@ class ProjectViewModel(
             )
 
             val repo = project.getRepo(directoryProvider)
-            _state.value.profile?.gogsUser?.let { user ->
-                repo.setAuthor(user.username, user.email)
+            _state.value.user?.let { user ->
+                repo.setAuthor(user.wacsUsername, user.wacsUserEmail)
             }
             repo.commit()
 
@@ -293,9 +288,9 @@ class ProjectViewModel(
         }
     }
 
-    private fun updateProfile(profile: Profile?) {
+    private fun updateUser(user: HtrUser?) {
         _state.update {
-            it.copy(profile = profile)
+            it.copy(user = user)
         }
     }
 

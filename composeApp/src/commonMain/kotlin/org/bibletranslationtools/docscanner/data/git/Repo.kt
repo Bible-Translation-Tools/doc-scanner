@@ -1,4 +1,4 @@
-package org.bibletranslationtools.docscanner.data.local.git
+package org.bibletranslationtools.docscanner.data.git
 
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.GitCommand

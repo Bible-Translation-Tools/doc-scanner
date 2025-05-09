@@ -120,7 +120,7 @@ data class ProjectScreen(
                 val extraActions = mutableListOf<ExtraAction>()
                 TopNavigationBar(
                     title = project.getTitle(),
-                    profile = state.profile,
+                    user = state.user,
                     page = PageType.PROJECT,
                     extraAction = extraActions.toTypedArray()
                 )

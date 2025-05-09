@@ -18,8 +18,8 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.bibletranslationtools.docscanner.data.local.JsonLenient
-import org.bibletranslationtools.docscanner.data.local.Settings
+import org.bibletranslationtools.docscanner.data.JsonLenient
+import org.bibletranslationtools.docscanner.data.Settings
 import org.bibletranslationtools.docscanner.data.models.Alert
 import org.bibletranslationtools.docscanner.data.models.Book
 import org.bibletranslationtools.docscanner.data.models.Language

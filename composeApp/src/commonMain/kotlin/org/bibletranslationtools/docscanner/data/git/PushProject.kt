@@ -1,4 +1,4 @@
-package org.bibletranslationtools.docscanner.data.local.git
+package org.bibletranslationtools.docscanner.data.git
 
 import docscanner.composeapp.generated.resources.Res
 import docscanner.composeapp.generated.resources.git_awaiting_report
@@ -13,9 +13,9 @@ import docscanner.composeapp.generated.resources.git_rejected_remote_changed
 import docscanner.composeapp.generated.resources.git_server_details
 import docscanner.composeapp.generated.resources.git_up_to_date
 import docscanner.composeapp.generated.resources.pref_default_git_server_port
-import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
-import org.bibletranslationtools.docscanner.data.local.OnProgressListener
-import org.bibletranslationtools.docscanner.data.local.Settings
+import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
+import org.bibletranslationtools.docscanner.OnProgressListener
+import org.bibletranslationtools.docscanner.data.Settings
 import org.bibletranslationtools.docscanner.data.models.Project
 import org.bibletranslationtools.docscanner.data.models.getRepo
 import org.bibletranslationtools.docscanner.data.repository.PreferenceRepository
@@ -27,6 +27,7 @@ import org.eclipse.jgit.errors.NoRemoteRepositoryException
 import org.eclipse.jgit.transport.RefSpec
 import org.eclipse.jgit.transport.RemoteRefUpdate
 import org.jetbrains.compose.resources.getString
+import org.unfoldingword.gogsclient.User
 import java.io.IOException
 
 class PushProject(
@@ -43,21 +44,17 @@ class PushProject(
 
     suspend fun execute(
         project: Project,
-        profile: Profile,
+        user: User,
         progressListener: OnProgressListener? = null
     ): Result {
-        if (profile.gogsUser != null) {
-            val repository = getRepository.execute(project, profile, progressListener)
-            try {
-                val repo: Repo = project.getRepo(directoryProvider)
-                repo.commit()
+        val repository = getRepository.execute(project, user, progressListener)
+        try {
+            val repo: Repo = project.getRepo(directoryProvider)
+            repo.commit()
 
-                return push(repo, repository!!.sshUrl, progressListener)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        } else {
-            return Result(Status.AUTH_FAILURE, null)
+            return push(repo, repository!!.sshUrl, progressListener)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
 
         return Result(Status.UNKNOWN, null)

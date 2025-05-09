@@ -44,7 +44,7 @@ class SplashScreen : Screen {
             topBar = {
                 TopNavigationBar(
                     title = stringResource(R.string.app_name),
-                    profile = null,
+                    user = null,
                     page = PageType.SPLASH
                 )
             }

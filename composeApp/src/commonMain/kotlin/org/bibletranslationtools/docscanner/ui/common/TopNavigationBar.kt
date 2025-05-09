@@ -30,7 +30,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import org.bibletranslationtools.docscanner.data.local.git.Profile
+import org.bibletranslationtools.docscanner.api.HtrUser
 
 data class ExtraAction(
     val title: String,
@@ -49,21 +49,21 @@ enum class PageType {
 @Composable
 fun TopNavigationBar(
     title: String,
-    profile: Profile?,
+    user: HtrUser?,
     page: PageType,
     vararg extraAction: ExtraAction,
 ) {
     val navigator = LocalNavigator.currentOrThrow
     var showDropDownMenu by remember { mutableStateOf(false) }
 
-    var profileState by remember { mutableStateOf(profile) }
+    var userState by remember { mutableStateOf(user) }
     var actionsState by remember { mutableStateOf(extraAction) }
     var showMenu by remember { mutableStateOf(false) }
 
-    LaunchedEffect(profile, extraAction) {
-        profileState = profile
+    LaunchedEffect(user, extraAction) {
+        userState = user
         actionsState = extraAction
-        showMenu = profile != null && extraAction.isNotEmpty()
+        showMenu = user != null && extraAction.isNotEmpty()
     }
 
     TopAppBar(
@@ -97,7 +97,7 @@ fun TopNavigationBar(
                     onDismissRequest = { showDropDownMenu = false },
                     modifier = Modifier.width(200.dp)
                 ) {
-                    profileState?.let { user ->
+                    userState?.let { user ->
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center,
@@ -105,7 +105,7 @@ fun TopNavigationBar(
                                 .height(32.dp)
                                 .padding(bottom = 4.dp)
                         ) {
-                            Text(text = user.currentUser)
+                            Text(text = user.wacsUsername)
                         }
                     }
 

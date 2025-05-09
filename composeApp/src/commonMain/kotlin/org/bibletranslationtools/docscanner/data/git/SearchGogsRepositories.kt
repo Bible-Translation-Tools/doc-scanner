@@ -1,10 +1,10 @@
-package org.bibletranslationtools.docscanner.data.local.git
+package org.bibletranslationtools.docscanner.data.git
 
 import docscanner.composeapp.generated.resources.Res
 import docscanner.composeapp.generated.resources.gogs_user_agent
 import docscanner.composeapp.generated.resources.pref_default_gogs_api
-import org.bibletranslationtools.docscanner.data.local.OnProgressListener
-import org.bibletranslationtools.docscanner.data.local.Settings
+import org.bibletranslationtools.docscanner.OnProgressListener
+import org.bibletranslationtools.docscanner.data.Settings
 import org.bibletranslationtools.docscanner.data.repository.PreferenceRepository
 import org.bibletranslationtools.docscanner.data.repository.getPref
 import org.jetbrains.compose.resources.getString

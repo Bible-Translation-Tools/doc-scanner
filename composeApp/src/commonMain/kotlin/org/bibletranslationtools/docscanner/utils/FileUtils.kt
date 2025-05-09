@@ -7,13 +7,15 @@ import de.jonasbroeckmann.kzip.Zip
 import de.jonasbroeckmann.kzip.compressFrom
 import de.jonasbroeckmann.kzip.open
 import docscanner.composeapp.generated.resources.Res
+import io.ktor.util.sha1
 import kotlinx.io.asSource
 import kotlinx.io.buffered
 import kotlinx.io.files.FileSystem
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.readByteArray
 import kotlinx.io.readString
-import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
+import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
 import org.bibletranslationtools.docscanner.data.models.Project
 import org.bibletranslationtools.docscanner.data.models.getName
 import java.io.File
@@ -108,6 +110,16 @@ object FileUtils {
 fun Path.readString(): String {
     return SystemFileSystem.source(this).buffered().use {
         it.readString()
+    }
+}
+
+fun Path.toSHA1(): String {
+    return try {
+        SystemFileSystem.source(this).buffered().use { source ->
+            sha1(source.readByteArray()).toString()
+        }
+    } catch (e: Exception) {
+        throw RuntimeException("Error calculating SHA-1 for file $this", e)
     }
 }
 

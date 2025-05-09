@@ -4,8 +4,8 @@ import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable
 import org.bibletranslationtools.database.ProjectEntity
 import org.bibletranslationtools.database.ProjectWithData
-import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
-import org.bibletranslationtools.docscanner.data.local.git.Repo
+import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
+import org.bibletranslationtools.docscanner.data.git.Repo
 
 @Serializable
 data class Project(

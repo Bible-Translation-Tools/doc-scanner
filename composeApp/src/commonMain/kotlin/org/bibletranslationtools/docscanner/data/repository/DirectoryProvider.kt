@@ -1,6 +1,8 @@
-package org.bibletranslationtools.docscanner.data.local
+package org.bibletranslationtools.docscanner.data.repository
 
 import android.content.Context
+import com.jcraft.jsch.JSch
+import com.jcraft.jsch.KeyPair
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -148,11 +150,11 @@ class DirectoryProviderImpl (private val context: Context) : DirectoryProvider {
             val privateKeyFile = java.io.File(privateKey.toString())
             val publicKeyFile = java.io.File(publicKey.toString())
 
-            val jsch = com.jcraft.jsch.JSch()
-            val type = com.jcraft.jsch.KeyPair.RSA
+            val jsch = JSch()
+            val type = KeyPair.RSA
 
             try {
-                val keyPair = com.jcraft.jsch.KeyPair.genKeyPair(jsch, type)
+                val keyPair = KeyPair.genKeyPair(jsch, type)
                 privateKeyFile.createNewFile()
                 keyPair.writePrivateKey(privateKeyFile.absolutePath)
                 publicKeyFile.createNewFile()

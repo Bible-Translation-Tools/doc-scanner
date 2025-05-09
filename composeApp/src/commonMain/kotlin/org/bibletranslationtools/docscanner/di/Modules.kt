@@ -4,19 +4,19 @@ import android.content.Context
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import org.bibletranslationtools.database.MainDatabase
-import org.bibletranslationtools.docscanner.data.local.DB_NAME
-import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
-import org.bibletranslationtools.docscanner.data.local.DirectoryProviderImpl
-import org.bibletranslationtools.docscanner.data.local.git.CreateRepository
-import org.bibletranslationtools.docscanner.data.local.git.GetRepository
-import org.bibletranslationtools.docscanner.data.local.git.GogsLogin
-import org.bibletranslationtools.docscanner.data.local.git.GogsLogout
-import org.bibletranslationtools.docscanner.data.local.git.PushProject
-import org.bibletranslationtools.docscanner.data.local.git.RegisterSSHKeys
-import org.bibletranslationtools.docscanner.data.local.git.SearchGogsRepositories
+import org.bibletranslationtools.docscanner.api.HtrLogin
+import org.bibletranslationtools.docscanner.api.TranscriberApi
+import org.bibletranslationtools.docscanner.data.DB_NAME
+import org.bibletranslationtools.docscanner.data.git.CreateRepository
+import org.bibletranslationtools.docscanner.data.git.GetRepository
+import org.bibletranslationtools.docscanner.data.git.PushProject
+import org.bibletranslationtools.docscanner.data.git.RegisterSSHKeys
+import org.bibletranslationtools.docscanner.data.git.SearchGogsRepositories
 import org.bibletranslationtools.docscanner.data.models.Project
 import org.bibletranslationtools.docscanner.data.repository.BookRepository
 import org.bibletranslationtools.docscanner.data.repository.BookRepositoryImpl
+import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
+import org.bibletranslationtools.docscanner.data.repository.DirectoryProviderImpl
 import org.bibletranslationtools.docscanner.data.repository.LanguageRepository
 import org.bibletranslationtools.docscanner.data.repository.LanguageRepositoryImpl
 import org.bibletranslationtools.docscanner.data.repository.LevelRepository
@@ -40,6 +40,7 @@ val sharedModule = module {
     singleOf(::DirectoryProviderImpl).bind<DirectoryProvider>()
     singleOf(::PreferenceRepositoryImpl).bind<PreferenceRepository>()
     singleOf(::provideDatabaseDriver)
+    singleOf(::TranscriberApi)
 
     // Database repositories
     singleOf(::ProjectRepositoryImpl).bind<ProjectRepository>()
@@ -52,7 +53,7 @@ val sharedModule = module {
     factoryOf(::SplashViewModel)
     factoryOf(::HomeViewModel)
     factory { (project: Project) ->
-        ProjectViewModel(project, get(), get(), get())
+        ProjectViewModel(project, get(), get(), get(), get())
     }
 
     // Git dependencies
@@ -60,8 +61,7 @@ val sharedModule = module {
     factoryOf(::CreateRepository)
     factoryOf(::SearchGogsRepositories)
     factoryOf(::PushProject)
-    factoryOf(::GogsLogin)
-    factoryOf(::GogsLogout)
+    factoryOf(::HtrLogin)
     factoryOf(::RegisterSSHKeys)
 }
 

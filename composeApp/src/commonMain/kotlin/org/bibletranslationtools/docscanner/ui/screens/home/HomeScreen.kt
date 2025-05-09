@@ -90,7 +90,7 @@ class HomeScreen : Screen {
         Scaffold(
             topBar = {
                 val extraActions = mutableListOf<ExtraAction>()
-                if (state.profile != null) {
+                if (state.user != null) {
                     extraActions.add(
                         ExtraAction(
                             title = stringResource(Res.string.logout),
@@ -101,7 +101,7 @@ class HomeScreen : Screen {
                 }
                 TopNavigationBar(
                     title = stringResource(Res.string.app_name),
-                    profile = state.profile,
+                    user = state.user,
                     page = PageType.HOME,
                     extraAction = extraActions.toTypedArray()
                 )
@@ -144,7 +144,7 @@ class HomeScreen : Screen {
                                 } else null
                             },
                             onUploadClick = {
-                                if (state.profile != null) {
+                                if (state.user != null) {
                                     viewModel.onEvent(HomeEvent.UploadProject(project))
                                 } else {
                                     viewModel.onEvent(HomeEvent.UpdateProject(project))
