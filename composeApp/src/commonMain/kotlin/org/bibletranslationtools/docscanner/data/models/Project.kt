@@ -9,7 +9,7 @@ import org.bibletranslationtools.docscanner.data.git.Repo
 
 @Serializable
 data class Project(
-    val id: Int = 0,
+    val id: Long = 0,
     val language: Language,
     val book: Book,
     val level: Level,
@@ -32,10 +32,10 @@ fun Project.getTitle(): String {
 
 fun Project.toEntity(): ProjectEntity {
     return ProjectEntity(
-        id = id.toLong(),
-        languageId = language.id.toLong(),
-        bookId = book.id.toLong(),
-        levelId = level.id.toLong(),
+        id = id,
+        languageId = language.id,
+        bookId = book.id,
+        levelId = level.id,
         created = created,
         modified = modified
     )
@@ -43,9 +43,9 @@ fun Project.toEntity(): ProjectEntity {
 
 fun ProjectWithData.toModel(): Project {
     return Project(
-        id = id.toInt(),
+        id = id,
         language = Language(
-            id = languageId.toInt(),
+            id = languageId,
             slug = langSlug!!,
             name = langName!!,
             angName = langAngName!!,
@@ -53,14 +53,14 @@ fun ProjectWithData.toModel(): Project {
             gw = langGw == 1L
         ),
         book = Book(
-            id = bookId.toInt(),
+            id = bookId,
             slug = bookSlug!!,
             name = bookName!!,
             anthology = bookAnthology!!,
-            sort = bookSort!!.toInt()
+            sort = bookSort!!
         ),
         level = Level(
-            id = levelId.toInt(),
+            id = levelId,
             slug = levelSlug!!,
             name = levelName!!
         ),

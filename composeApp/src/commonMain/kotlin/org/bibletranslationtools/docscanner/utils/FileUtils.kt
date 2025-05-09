@@ -15,39 +15,34 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.readByteArray
 import kotlinx.io.readString
-import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
 import org.bibletranslationtools.docscanner.data.models.Project
 import org.bibletranslationtools.docscanner.data.models.getName
+import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
 import java.io.File
 
 object FileUtils {
-    fun copyPdfFileToAppDirectory(
+    fun writeUriToPath(
         context: Context,
-        directoryProvider: DirectoryProvider,
-        pdfUri: Uri,
-        destinationFileName: String,
-        project: Project
+        fileUri: Uri,
+        path: Path
     ) {
-        context.contentResolver.openInputStream(pdfUri)?.use { inputStream ->
-            val projectDir = Path(directoryProvider.projectsDir, project.getName())
-            val outputFile = Path(projectDir, destinationFileName)
+        context.contentResolver.openInputStream(fileUri)?.use { inputStream ->
+            try {
+                path.parent?.let {
+                    SystemFileSystem.createDirectories(it)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
 
-            SystemFileSystem.createDirectories(projectDir)
-
-            SystemFileSystem.sink(outputFile).buffered().use { sink ->
+            SystemFileSystem.sink(path).buffered().use { sink ->
                 inputStream.asSource().buffered().transferTo(sink)
             }
         }
     }
 
-    fun getFileSize(
-        directoryProvider: DirectoryProvider,
-        fileName: String,
-        project: Project
-    ): String {
-        val projectDir = Path(directoryProvider.projectsDir, project.getName())
-        val file = Path(projectDir, fileName)
-        val fileSizeBytes = SystemFileSystem.metadataOrNull(file)?.size ?: 0
+    fun getFileSize(path: Path): String {
+        val fileSizeBytes = SystemFileSystem.metadataOrNull(path)?.size ?: 0
         val fileSizeKB = fileSizeBytes / 1024
         return if (fileSizeKB > 1024) {
             val fileSizeMB = fileSizeKB / 1024
@@ -83,6 +78,10 @@ object FileUtils {
         )
     }
 
+    fun renamePath(src: Path, dest: Path) {
+        SystemFileSystem.atomicMove(src, dest)
+    }
+
     suspend fun loadAsset(name: String): String {
         val readBytes = Res.readBytes("files/$name")
         return String(readBytes)
@@ -110,16 +109,6 @@ object FileUtils {
 fun Path.readString(): String {
     return SystemFileSystem.source(this).buffered().use {
         it.readString()
-    }
-}
-
-fun Path.toSHA1(): String {
-    return try {
-        SystemFileSystem.source(this).buffered().use { source ->
-            sha1(source.readByteArray()).toString()
-        }
-    } catch (e: Exception) {
-        throw RuntimeException("Error calculating SHA-1 for file $this", e)
     }
 }
 

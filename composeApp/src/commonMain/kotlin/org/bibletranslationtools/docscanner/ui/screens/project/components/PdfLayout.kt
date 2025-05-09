@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DriveFileRenameOutline
 import androidx.compose.material.icons.filled.MoreVert
@@ -32,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import docscanner.composeapp.generated.resources.Res
 import docscanner.composeapp.generated.resources.delete
 import docscanner.composeapp.generated.resources.rename
+import docscanner.composeapp.generated.resources.upload_images
 import org.bibletranslationtools.docscanner.data.models.Pdf
 import org.bibletranslationtools.docscanner.utils.format
 import org.bibletranslationtools.docscanner.utils.toLocalDateTime
@@ -44,6 +46,7 @@ fun PdfLayout(
     onCardClick: () -> Unit,
     onMoreClick: () -> Unit,
     onRenameClick: () -> Unit,
+    onUploadClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onDismissRequest: () -> Unit
 ) {
@@ -109,6 +112,20 @@ fun PdfLayout(
                         onClick = {
                             onDismissRequest()
                             onRenameClick()
+                        }
+                    )
+
+                    DropdownMenuItem(
+                        text = { Text(stringResource(Res.string.upload_images)) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.CloudUpload,
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = {
+                            onDismissRequest()
+                            onUploadClick()
                         }
                     )
 

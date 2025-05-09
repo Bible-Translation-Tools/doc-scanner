@@ -57,7 +57,7 @@ class HomeScreen : Screen {
 
         val state by viewModel.state.collectAsStateWithLifecycle()
         val event by viewModel.event.collectAsStateWithLifecycle(HomeEvent.Idle)
-        var expandedItemId by remember { mutableStateOf<Int?>(null) }
+        var expandedItemId by remember { mutableStateOf<Long?>(null) }
 
         var showCreateProjectDialog by remember { mutableStateOf(false) }
         var showLoginDialog by remember { mutableStateOf(false) }

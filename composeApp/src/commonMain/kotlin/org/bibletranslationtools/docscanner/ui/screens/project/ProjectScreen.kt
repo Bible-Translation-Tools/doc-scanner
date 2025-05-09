@@ -2,7 +2,6 @@ package org.bibletranslationtools.docscanner.ui.screens.project
 
 import android.app.Activity
 import android.content.Intent
-import android.util.Log
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
@@ -30,6 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_JPEG
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_PDF
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.SCANNER_MODE_FULL
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
@@ -50,6 +50,7 @@ import org.bibletranslationtools.docscanner.ui.common.ProgressDialog
 import org.bibletranslationtools.docscanner.ui.common.TopNavigationBar
 import org.bibletranslationtools.docscanner.ui.screens.project.components.PdfLayout
 import org.bibletranslationtools.docscanner.ui.screens.project.components.PdfRenameDialog
+import org.bibletranslationtools.docscanner.ui.screens.project.components.UploadImagesDialog
 import org.bibletranslationtools.docscanner.ui.viewmodel.ProjectEvent
 import org.bibletranslationtools.docscanner.ui.viewmodel.ProjectViewModel
 import org.bibletranslationtools.docscanner.utils.showToast
@@ -67,13 +68,14 @@ data class ProjectScreen(
         }
 
         var renamePdf by remember { mutableStateOf<Pdf?>(null) }
+        var uploadImages by remember { mutableStateOf<Pdf?>(null) }
 
         val activity = LocalActivity.current
         val context = LocalContext.current
 
         val state by viewModel.state.collectAsStateWithLifecycle()
         val event by viewModel.event.collectAsStateWithLifecycle(ProjectEvent.Idle)
-        var expandedItemId by remember { mutableStateOf<Int?>(null) }
+        var expandedItemId by remember { mutableStateOf<Long?>(null) }
 
         // val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
 
@@ -97,9 +99,13 @@ data class ProjectScreen(
             if (result.resultCode == Activity.RESULT_OK) {
                 val scanningResult = GmsDocumentScanningResult.fromActivityResultIntent(result.data)
 
-                scanningResult?.pdf?.let { pdf ->
-                    Log.d("pdfName", pdf.uri.lastPathSegment.toString())
-                    viewModel.onEvent(ProjectEvent.CreatePdf(pdf.uri, context))
+                scanningResult?.let { scanned ->
+                    val images = scanned.pages?.map { it.imageUri } ?: emptyList()
+                    if (images.isNotEmpty()) {
+                        scanned.pdf?.let { pdf ->
+                            viewModel.onEvent(ProjectEvent.CreatePdf(pdf.uri, images, context))
+                        }
+                    }
                 }
             }
         }
@@ -109,7 +115,7 @@ data class ProjectScreen(
                 GmsDocumentScannerOptions.Builder()
                     .setPageLimit(1000)
                     .setGalleryImportAllowed(true)
-                    .setResultFormats(RESULT_FORMAT_PDF)
+                    .setResultFormats(RESULT_FORMAT_PDF, RESULT_FORMAT_JPEG)
                     .setScannerMode(SCANNER_MODE_FULL)
                     .build()
             )
@@ -178,6 +184,9 @@ data class ProjectScreen(
                             onRenameClick = {
                                 renamePdf = pdf
                             },
+                            onUploadClick = {
+                                uploadImages = pdf
+                            },
                             onDeleteClick = {
                                 viewModel.onEvent(ProjectEvent.DeletePdf(pdf))
                             },
@@ -209,6 +218,14 @@ data class ProjectScreen(
                     name = pdf.name,
                     onRename = { viewModel.onEvent(ProjectEvent.RenamePdf(pdf, it)) },
                     onDismissRequest = { renamePdf = null }
+                )
+            }
+
+            uploadImages?.let { pdf ->
+                UploadImagesDialog(
+                    images = pdf.images,
+                    onUpload = { viewModel.onEvent(ProjectEvent.UploadImages(it)) },
+                    onDismissRequest = { uploadImages = null }
                 )
             }
         }

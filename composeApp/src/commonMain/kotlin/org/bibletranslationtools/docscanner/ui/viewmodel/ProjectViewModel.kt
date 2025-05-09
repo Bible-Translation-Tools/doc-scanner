@@ -31,6 +31,7 @@ import kotlinx.io.files.SystemFileSystem
 import org.bibletranslationtools.docscanner.api.HtrUser
 import org.bibletranslationtools.docscanner.api.TranscriberApi
 import org.bibletranslationtools.docscanner.data.models.Alert
+import org.bibletranslationtools.docscanner.data.models.Image
 import org.bibletranslationtools.docscanner.data.models.Pdf
 import org.bibletranslationtools.docscanner.data.models.Progress
 import org.bibletranslationtools.docscanner.data.models.Project
@@ -38,11 +39,12 @@ import org.bibletranslationtools.docscanner.data.models.getName
 import org.bibletranslationtools.docscanner.data.models.getRepo
 import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
 import org.bibletranslationtools.docscanner.data.repository.PdfRepository
-import org.bibletranslationtools.docscanner.data.repository.PreferenceRepository
 import org.bibletranslationtools.docscanner.ui.common.ConfirmAction
 import org.bibletranslationtools.docscanner.utils.FileUtils
 import org.bibletranslationtools.docscanner.utils.format
 import org.jetbrains.compose.resources.getString
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 data class ProjectState(
     val user: HtrUser? = null,
@@ -54,17 +56,21 @@ data class ProjectState(
 
 sealed class ProjectEvent {
     data object Idle : ProjectEvent()
-    data class CreatePdf(val pdfUri: Uri, val context: Context): ProjectEvent()
+    data class CreatePdf(
+        val pdfUri: Uri,
+        val images: List<Uri>,
+        val context: Context
+    ) : ProjectEvent()
     data class RenamePdf(val pdf: Pdf, val newName: String) : ProjectEvent()
-    data class DeletePdf(val pdf: Pdf): ProjectEvent()
-    data class OpenPdf(val pdf: Pdf, val context: Context): ProjectEvent()
-    data class PdfOpened(val uri: Uri): ProjectEvent()
+    data class DeletePdf(val pdf: Pdf) : ProjectEvent()
+    data class OpenPdf(val pdf: Pdf, val context: Context) : ProjectEvent()
+    data class PdfOpened(val uri: Uri) : ProjectEvent()
+    data class UploadImages(val images: List<Image>) : ProjectEvent()
 }
 
 class ProjectViewModel(
     private val project: Project,
     private val directoryProvider: DirectoryProvider,
-    private val preferenceRepository: PreferenceRepository,
     private val pdfRepository: PdfRepository,
     private val transcriberApi: TranscriberApi
 ) : ScreenModel {
@@ -83,10 +89,11 @@ class ProjectViewModel(
 
     fun onEvent(event: ProjectEvent) {
         when (event) {
-            is ProjectEvent.CreatePdf -> createPdf(event.pdfUri, event.context)
+            is ProjectEvent.CreatePdf -> createPdf(event.pdfUri, event.images, event.context)
             is ProjectEvent.RenamePdf -> renamePdf(event.pdf, event.newName)
             is ProjectEvent.DeletePdf -> deletePdf(event.pdf)
             is ProjectEvent.OpenPdf -> openPdf(event.pdf, event.context)
+            is ProjectEvent.UploadImages -> uploadImages(event.images)
             else -> resetChannel()
         }
     }
@@ -106,24 +113,23 @@ class ProjectViewModel(
         updatePdfs(pdfRepository.getAll(project))
     }
 
+    @OptIn(ExperimentalUuidApi::class)
     private fun createPdf(
         pdfUri: Uri,
+        images: List<Uri>,
         context: Context
     ) {
         screenModelScope.launch(Dispatchers.IO) {
             updateProgress(Progress(-1f, getString(Res.string.creating_pdf)))
 
             val date = Clock.System.now()
-                .toLocalDateTime(TimeZone.currentSystemDefault())
-            val fileName = "${date.format()}.pdf"
+            val localDate = date.toLocalDateTime(TimeZone.currentSystemDefault())
+            val pdfName = localDate.format()
+            val pdfFileName = "$pdfName.pdf"
+            val projectDir = Path(directoryProvider.projectsDir, project.getName())
+            val pdfFile = Path(projectDir, pdfFileName)
 
-            FileUtils.copyPdfFileToAppDirectory(
-                context,
-                directoryProvider,
-                pdfUri,
-                fileName,
-                project
-            )
+            FileUtils.writeUriToPath(context, pdfUri, pdfFile)
 
             val repo = project.getRepo(directoryProvider)
             _state.value.user?.let { user ->
@@ -132,15 +138,40 @@ class ProjectViewModel(
             repo.commit()
 
             val pdf = Pdf(
-                name = fileName,
-                size = FileUtils.getFileSize(directoryProvider, fileName, project),
-                created = date.toString(),
-                modified = date.toString(),
-                projectId = project.id
+                name = pdfFileName,
+                size = FileUtils.getFileSize(pdfFile),
+                created = localDate.toString(),
+                modified = localDate.toString(),
+                projectId = project.id,
+                images = emptyList()
             )
 
             try {
                 pdfRepository.insert(pdf)
+                val pdfId = pdfRepository.lastId()
+
+                images.forEach { imageUri ->
+                    val timestamp = date.epochSeconds
+                    val imageName = "${Uuid.random()}.jpg"
+
+                    val pdfDir = Path(projectDir, pdfName)
+                    val imageFile = Path(pdfDir, imageName)
+
+                    FileUtils.writeUriToPath(
+                        context = context,
+                        fileUri = imageUri,
+                        path = imageFile
+                    )
+
+                    val image = Image(
+                        name = imageName,
+                        size = FileUtils.getFileSize(imageFile),
+                        created = timestamp,
+                        pdfId = pdfId
+                    )
+
+                    pdfRepository.insertImage(image)
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
                 updateAlert(
@@ -168,6 +199,12 @@ class ProjectViewModel(
                 project
             )
             _event.send(ProjectEvent.PdfOpened(uri))
+        }
+    }
+
+    private fun uploadImages(images: List<Image>) {
+        images.forEach {
+            println(it.name)
         }
     }
 
@@ -222,17 +259,11 @@ class ProjectViewModel(
                 updateProgress(Progress(-1f, getString(Res.string.renaming_pdf)))
 
                 try {
-                    val oldFile = Path(
-                        directoryProvider.projectsDir,
-                        project.getName(),
-                        pdf.name
-                    )
-                    val newFile = Path(
-                        directoryProvider.projectsDir,
-                        project.getName(),
-                        newNameNormalized
-                    )
-                    SystemFileSystem.atomicMove(oldFile, newFile)
+                    val projectDir = Path(directoryProvider.projectsDir, project.getName())
+
+                    val oldFile = Path(projectDir, pdf.name)
+                    val newFile = Path(projectDir, newNameNormalized)
+                    FileUtils.renamePath(oldFile, newFile)
 
                     val now = Clock.System.now()
                         .toLocalDateTime(TimeZone.currentSystemDefault())
@@ -242,6 +273,18 @@ class ProjectViewModel(
                         modified = now.toString()
                     )
                     updatePdf(newPdf)
+
+                    val oldImgDir = Path(
+                        projectDir,
+                        pdf.name.replace(".pdf", "")
+                    )
+
+                    val newImgDir = Path(
+                        projectDir,
+                        newNameNormalized.replace(".pdf", "")
+                    )
+
+                    FileUtils.renamePath(oldImgDir, newImgDir)
                 } catch (e: Exception) {
                     e.printStackTrace()
                     updateAlert(

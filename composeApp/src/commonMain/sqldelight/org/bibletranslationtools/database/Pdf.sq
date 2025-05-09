@@ -32,3 +32,6 @@ delete:
 DELETE
 FROM PdfEntity
 WHERE id = :id;
+
+lastId:
+SELECT MAX(id) FROM PdfEntity;

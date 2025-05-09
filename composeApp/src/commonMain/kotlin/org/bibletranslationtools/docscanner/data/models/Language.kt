@@ -6,7 +6,7 @@ import org.bibletranslationtools.database.LanguageEntity
 
 @Serializable
 data class Language(
-    val id: Int = 0,
+    val id: Long = 0,
     @SerialName("lc")
     val slug: String,
     @SerialName("ln")
@@ -28,7 +28,7 @@ data class Language(
 
 fun Language.toEntity(): LanguageEntity {
     return LanguageEntity(
-        id = id.toLong(),
+        id = id,
         slug = slug,
         name = name,
         angName = angName,
@@ -39,7 +39,7 @@ fun Language.toEntity(): LanguageEntity {
 
 fun LanguageEntity.toModel(): Language {
     return Language(
-        id = id.toInt(),
+        id = id,
         slug = slug,
         name = name,
         angName = angName,
