@@ -20,6 +20,7 @@ import docscanner.composeapp.generated.resources.rename_pdf_failed
 import docscanner.composeapp.generated.resources.renaming_pdf
 import docscanner.composeapp.generated.resources.upload_images_failed
 import docscanner.composeapp.generated.resources.uploading_images
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -98,6 +99,8 @@ class ProjectViewModel(
     private val _event: Channel<ProjectEvent> = Channel()
     val event = _event.receiveAsFlow()
 
+    private val logger = KotlinLogging.logger {}
+
     fun onEvent(event: ProjectEvent) {
         when (event) {
             is ProjectEvent.CreatePdf -> createPdf(event.pdfUri, event.context)
@@ -158,11 +161,11 @@ class ProjectViewModel(
             try {
                 pdfRepository.insert(pdf)
             } catch (e: Exception) {
-                e.printStackTrace()
+                val error = getString(Res.string.create_pdf_failed)
+                logger.error(e) { error }
+
                 updateAlert(
-                    Alert(getString(Res.string.create_pdf_failed)) {
-                        updateAlert(null)
-                    }
+                    Alert(error) { updateAlert(null) }
                 )
             }
 
@@ -228,11 +231,11 @@ class ProjectViewModel(
                     )
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                val error = getString(Res.string.upload_images_failed)
+                logger.error(e) { error }
+
                 updateAlert(
-                    Alert(getString(Res.string.upload_images_failed)) {
-                        updateAlert(null)
-                    }
+                    Alert(error) { updateAlert(null) }
                 )
             }
 
@@ -270,11 +273,11 @@ class ProjectViewModel(
             SystemFileSystem.delete(file)
             pdfRepository.delete(pdf)
         } catch (e: Exception) {
-            e.printStackTrace()
+            val error = getString(Res.string.delete_pdf_failed)
+            logger.error(e) { error }
+
             updateAlert(
-                Alert(getString(Res.string.delete_pdf_failed)) {
-                    updateAlert(null)
-                }
+                Alert(error) { updateAlert(null) }
             )
         }
     }
@@ -306,11 +309,11 @@ class ProjectViewModel(
                     )
                     updatePdf(newPdf)
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    val error = getString(Res.string.rename_pdf_failed)
+                    logger.error(e) { error }
+
                     updateAlert(
-                        Alert(getString(Res.string.rename_pdf_failed)) {
-                            updateAlert(null)
-                        }
+                        Alert(error) { updateAlert(null) }
                     )
                 }
 

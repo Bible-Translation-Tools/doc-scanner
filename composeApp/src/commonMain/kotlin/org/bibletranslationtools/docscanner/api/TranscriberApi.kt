@@ -1,5 +1,6 @@
 package org.bibletranslationtools.docscanner.api
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.android.Android
@@ -79,6 +80,7 @@ enum class Model(val value: String) {
 class TranscriberApi(preferenceRepository: PreferenceRepository) {
 
     private val cookieStorage = PersistentCookieStorage(preferenceRepository)
+    private val logger = KotlinLogging.logger {}
 
     private val client = HttpClient(Android) {
         install(HttpCookies) {
@@ -127,7 +129,7 @@ class TranscriberApi(preferenceRepository: PreferenceRepository) {
         return try {
             JsonLenient.decodeFromString<HtrUser>(session)
         } catch (e: Exception) {
-            e.printStackTrace()
+            logger.error(e) { "Error decoding user session" }
             null
         }
     }

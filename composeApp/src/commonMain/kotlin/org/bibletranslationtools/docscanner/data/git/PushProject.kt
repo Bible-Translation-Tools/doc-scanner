@@ -13,11 +13,13 @@ import docscanner.composeapp.generated.resources.git_rejected_remote_changed
 import docscanner.composeapp.generated.resources.git_server_details
 import docscanner.composeapp.generated.resources.git_up_to_date
 import docscanner.composeapp.generated.resources.pref_default_git_server_port
-import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.bibletranslationtools.docscanner.OnProgressListener
 import org.bibletranslationtools.docscanner.data.Settings
 import org.bibletranslationtools.docscanner.data.models.Project
+import org.bibletranslationtools.docscanner.data.models.getName
 import org.bibletranslationtools.docscanner.data.models.getRepo
+import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
 import org.bibletranslationtools.docscanner.data.repository.PreferenceRepository
 import org.bibletranslationtools.docscanner.data.repository.getPref
 import org.eclipse.jgit.api.Git
@@ -41,6 +43,7 @@ class PushProject(
     )
 
     private val max = 100
+    private val logger = KotlinLogging.logger {}
 
     suspend fun execute(
         project: Project,
@@ -54,7 +57,7 @@ class PushProject(
 
             return push(repo, repository!!.sshUrl, progressListener)
         } catch (e: Exception) {
-            e.printStackTrace()
+            logger.error(e) { "Error pushing project ${project.getName()}" }
         }
 
         return Result(Status.UNKNOWN, null)
@@ -124,7 +127,7 @@ class PushProject(
             // give back the response message
             return Result(status, response.toString())
         } catch (e: TransportException) {
-            e.printStackTrace()
+            logger.error(e) { "Error pushing project" }
             val cause = e.cause
             if (cause != null) {
                 val subException = cause.cause
@@ -141,14 +144,14 @@ class PushProject(
             }
             return Result(status, null)
         } catch (e: OutOfMemoryError) {
-            e.printStackTrace()
+            logger.error(e) { "Error pushing project" }
             status = Status.OUT_OF_MEMORY
             return Result(status, null)
         } catch (e: java.lang.Exception) {
-            e.printStackTrace()
+            logger.error(e) { "Error pushing project" }
             return Result(status, null)
         } catch (e: Throwable) {
-            e.printStackTrace()
+            logger.error(e) { "Error pushing project" }
             return Result(status, null)
         }
     }

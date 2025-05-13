@@ -26,6 +26,8 @@ kotlin {
             implementation(libs.koin.androidx.compose)
             implementation(libs.sqldeight.android)
             implementation(libs.ktor.client.android)
+            implementation(libs.slf4j.jvm)
+            implementation(libs.logback.android)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -59,6 +61,7 @@ kotlin {
             implementation(libs.ktor.client.serialization.json)
 
             implementation(libs.coil.compose)
+            implementation(libs.kotlin.logging)
         }
     }
 

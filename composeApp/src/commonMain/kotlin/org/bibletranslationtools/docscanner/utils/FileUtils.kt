@@ -7,13 +7,12 @@ import de.jonasbroeckmann.kzip.Zip
 import de.jonasbroeckmann.kzip.compressFrom
 import de.jonasbroeckmann.kzip.open
 import docscanner.composeapp.generated.resources.Res
-import io.ktor.util.sha1
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.io.asSource
 import kotlinx.io.buffered
 import kotlinx.io.files.FileSystem
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
-import kotlinx.io.readByteArray
 import kotlinx.io.readString
 import org.bibletranslationtools.docscanner.data.models.Project
 import org.bibletranslationtools.docscanner.data.models.getName
@@ -26,13 +25,14 @@ object FileUtils {
         fileUri: Uri,
         path: Path
     ) {
+        val logger = KotlinLogging.logger {}
         context.contentResolver.openInputStream(fileUri)?.use { inputStream ->
             try {
                 path.parent?.let {
                     SystemFileSystem.createDirectories(it)
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                logger.error(e) { "Error writing uri to path $path" }
             }
 
             SystemFileSystem.sink(path).buffered().use { sink ->

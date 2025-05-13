@@ -4,6 +4,7 @@ import docscanner.composeapp.generated.resources.Res
 import docscanner.composeapp.generated.resources.gogs_public_key_name
 import docscanner.composeapp.generated.resources.gogs_user_agent
 import docscanner.composeapp.generated.resources.pref_default_gogs_api
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.bibletranslationtools.docscanner.OnProgressListener
 import org.bibletranslationtools.docscanner.data.Settings
 import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
@@ -22,6 +23,7 @@ class RegisterSSHKeys(
     private val prefRepository: PreferenceRepository
 ) {
     private val max = 100
+    private val logger = KotlinLogging.logger {}
 
     suspend fun execute(
         force: Boolean,
@@ -47,8 +49,7 @@ class RegisterSSHKeys(
         try {
             keyString = directoryProvider.publicKey.readString().trim()
         } catch (e: IOException) {
-            println("Failed to retrieve the public key")
-            e.printStackTrace()
+            logger.error(e) { "Failed to retrieve the public key" }
             return false
         }
 

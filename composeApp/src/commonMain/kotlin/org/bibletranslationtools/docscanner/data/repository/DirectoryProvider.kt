@@ -3,6 +3,7 @@ package org.bibletranslationtools.docscanner.data.repository
 import android.content.Context
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.KeyPair
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -58,6 +59,11 @@ interface DirectoryProvider {
     val sharedDir: Path
 
     /**
+     * Returns the path to the log file
+     */
+    val logFile: Path
+
+    /**
      * Checks if the ssh keys have already been generated
      * @return Boolean
      */
@@ -92,6 +98,8 @@ class DirectoryProviderImpl (private val context: Context) : DirectoryProvider {
     companion object {
         const val TAG = "DirectoryProvider"
     }
+
+    private val logger = KotlinLogging.logger {}
 
     override val internalAppDir: Path
         get() = Path(context.filesDir.absolutePath)
@@ -139,6 +147,9 @@ class DirectoryProviderImpl (private val context: Context) : DirectoryProvider {
             return dir
         }
 
+    override val logFile: Path
+        get() = Path(externalAppDir, "log.txt")
+
     override fun hasSSHKeys(): Boolean {
         return SystemFileSystem.exists(privateKey) && SystemFileSystem.exists(publicKey)
     }
@@ -153,18 +164,14 @@ class DirectoryProviderImpl (private val context: Context) : DirectoryProvider {
             val jsch = JSch()
             val type = KeyPair.RSA
 
-            try {
-                val keyPair = KeyPair.genKeyPair(jsch, type)
-                privateKeyFile.createNewFile()
-                keyPair.writePrivateKey(privateKeyFile.absolutePath)
-                publicKeyFile.createNewFile()
-                keyPair.writePublicKey(publicKeyFile.absolutePath, identificator())
-                keyPair.dispose()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            val keyPair = KeyPair.genKeyPair(jsch, type)
+            privateKeyFile.createNewFile()
+            keyPair.writePrivateKey(privateKeyFile.absolutePath)
+            publicKeyFile.createNewFile()
+            keyPair.writePublicKey(publicKeyFile.absolutePath, identificator())
+            keyPair.dispose()
         } catch (e: Exception) {
-            e.printStackTrace()
+            logger.error(e) { "Error generating SSH keys" }
         }
     }
 
@@ -190,7 +197,7 @@ class DirectoryProviderImpl (private val context: Context) : DirectoryProvider {
                 SystemFileSystem.deleteRecursively(path)
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            logger.error(e) { "Error clearing cache" }
         }
     }
 }

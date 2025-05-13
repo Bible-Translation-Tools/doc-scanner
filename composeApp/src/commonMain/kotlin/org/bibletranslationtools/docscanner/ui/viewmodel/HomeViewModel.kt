@@ -23,6 +23,7 @@ import docscanner.composeapp.generated.resources.share_project_failed
 import docscanner.composeapp.generated.resources.sharing_project
 import docscanner.composeapp.generated.resources.unknown_error
 import docscanner.composeapp.generated.resources.uploading_project
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -108,6 +109,8 @@ class HomeViewModel(
     private val _event: Channel<HomeEvent> = Channel()
     val event = _event.receiveAsFlow()
 
+    private val logger = KotlinLogging.logger {}
+
     private fun initialize() {
         screenModelScope.launch(Dispatchers.IO) {
             updateProgress(Progress(-1f, getString(Res.string.loading_projects)))
@@ -165,11 +168,11 @@ class HomeViewModel(
                 val fileUri = FileUtils.getPathUri(context, zip)
                 _event.send(HomeEvent.ProjectShared(fileUri))
             } catch (e: Exception) {
-                e.printStackTrace()
+                val error = getString(Res.string.share_project_failed)
+                logger.error(e) { error }
+
                 updateAlert(
-                    Alert(getString(Res.string.share_project_failed)) {
-                        updateAlert(null)
-                    }
+                    Alert(error) { updateAlert(null) }
                 )
             }
 

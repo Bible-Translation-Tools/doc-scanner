@@ -7,6 +7,7 @@ import docscanner.composeapp.generated.resources.initialization_failed
 import docscanner.composeapp.generated.resources.initializing_books
 import docscanner.composeapp.generated.resources.initializing_languages
 import docscanner.composeapp.generated.resources.initializing_levels
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,6 +64,8 @@ class SplashViewModel(
     private val _event: Channel<SplashEvent> = Channel()
     val event = _event.receiveAsFlow()
 
+    private val logger = KotlinLogging.logger {}
+
     private fun initializeApp() {
         screenModelScope.launch(Dispatchers.IO) {
             val initialized = preferenceRepository.getPref(
@@ -75,6 +78,8 @@ class SplashViewModel(
 
             if (!initialized) {
                 updateProgress(Progress(-1f, getString(Res.string.initializing_languages)))
+                val initializationError = getString(Res.string.initialization_failed)
+
                 try {
                     languageRepository.deleteAll()
 
@@ -84,11 +89,9 @@ class SplashViewModel(
                         languageRepository.insert(it)
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    logger.error(e) { initializationError }
                     updateAlert(
-                        Alert(getString(Res.string.initialization_failed)) {
-                            updateAlert(null)
-                        }
+                        Alert(initializationError) { updateAlert(null) }
                     )
                     updateProgress(null)
                     return@launch
@@ -104,11 +107,9 @@ class SplashViewModel(
                         bookRepository.insert(it)
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    logger.error(e) { initializationError }
                     updateAlert(
-                        Alert(getString(Res.string.initialization_failed)) {
-                            updateAlert(null)
-                        }
+                        Alert(initializationError) { updateAlert(null) }
                     )
                     updateProgress(null)
                     return@launch
@@ -124,11 +125,9 @@ class SplashViewModel(
                         levelRepository.insert(it)
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    logger.error(e) { initializationError }
                     updateAlert(
-                        Alert(getString(Res.string.initialization_failed)) {
-                            updateAlert(null)
-                        }
+                        Alert(initializationError) { updateAlert(null) }
                     )
                     updateProgress(null)
                     return@launch
