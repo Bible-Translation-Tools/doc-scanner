@@ -50,6 +50,7 @@ import org.bibletranslationtools.docscanner.ui.common.ProgressDialog
 import org.bibletranslationtools.docscanner.ui.common.TopNavigationBar
 import org.bibletranslationtools.docscanner.ui.screens.project.components.PdfLayout
 import org.bibletranslationtools.docscanner.ui.screens.project.components.PdfRenameDialog
+import org.bibletranslationtools.docscanner.ui.screens.project.components.UploadCompleteDialog
 import org.bibletranslationtools.docscanner.ui.screens.project.components.UploadImagesDialog
 import org.bibletranslationtools.docscanner.ui.viewmodel.ProjectEvent
 import org.bibletranslationtools.docscanner.ui.viewmodel.ProjectViewModel
@@ -227,6 +228,10 @@ data class ProjectScreen(
                     onUpload = { viewModel.onEvent(ProjectEvent.UploadImages(it)) },
                     onDismissRequest = { extractedImages = emptyList() }
                 )
+            }
+
+            state.uploadStatus?.let {
+                UploadCompleteDialog(it)
             }
         }
     }

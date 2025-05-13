@@ -22,7 +22,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -56,10 +55,6 @@ fun UploadImagesDialog(
     var cachedImages by rememberSaveable { mutableStateOf(images) }
     var selectedImages by rememberSaveable { mutableStateOf<List<Image>>(emptyList()) }
     var imagePreview by rememberSaveable { mutableStateOf<Image?>(null) }
-
-    LaunchedEffect(selectedImages) {
-        println(selectedImages)
-    }
 
     Dialog(
         onDismissRequest = onDismissRequest,

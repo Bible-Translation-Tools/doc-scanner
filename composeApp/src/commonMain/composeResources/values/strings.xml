@@ -70,6 +70,7 @@
     <string name="delete_pdf_confirm">Are you sure you want to delete this PDF?</string>
     <string name="upload_images">Upload to Transcriber</string>
     <string name="uploading_images">Uploading images to Transcriber</string>
+    <string name="upload_images_success">Successfully uploaded to Transcriber</string>
     <string name="upload_images_failed">Upload to Transcriber failed</string>
     <string name="login_needed">Please login first</string>
     <string name="dismiss">Dismiss</string>

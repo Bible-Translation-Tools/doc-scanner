@@ -12,7 +12,6 @@ import io.ktor.client.plugins.cookies.HttpCookies
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.parameters
@@ -108,7 +107,7 @@ class TranscriberApi(preferenceRepository: PreferenceRepository) {
 
     suspend fun login(username: String, password: String): LoginResponse? {
         val response = client.submitForm(
-            url = "$BASE_URL/auth/login",
+            url = "$BASE_API_URL/auth/login",
             formParameters = parameters {
                 append("username", username)
                 append("password", password)
@@ -119,7 +118,10 @@ class TranscriberApi(preferenceRepository: PreferenceRepository) {
 
         return if (response.status.value == 200) {
             response.body<LoginResponse>()
-        } else null
+        } else {
+            logger.error { "Login failed with status code ${response.status.value}" }
+            null
+        }
     }
 
     fun logout() = cookieStorage.cleanup()
@@ -135,17 +137,21 @@ class TranscriberApi(preferenceRepository: PreferenceRepository) {
     }
 
     suspend fun uploadImage(request: ImageRequest): ImageResponse? {
-        val response = client.post("$BASE_URL/transcriber/") {
+        val response = client.post("$BASE_API_URL/transcriber/") {
             contentType(ContentType.Application.Json)
             setBody(request)
         }
         return if (response.status.value == 200) {
             response.body<ImageResponse>()
-        } else null
+        } else {
+            logger.error { "Upload failed with status code ${response.status.value}" }
+            null
+        }
     }
 
     internal companion object {
-        const val BASE_URL = "https://transcriber.wycliffe-associates-account.workers.dev/api/v1"
+        const val BASE_URL = "https://transcriber.wycliffe-associates-account.workers.dev"
+        const val BASE_API_URL = "$BASE_URL/api/v1"
         const val DEFAULT_PROMPT = "The image says: "
         const val DEFAULT_SYSTEM_PROMPT = "You are an expert at transcribing handwritten images of various languages. Respond only with the transcription of the image provided, do not output the transcription in quotes, parentheses, brackets or other such symbols"
     }

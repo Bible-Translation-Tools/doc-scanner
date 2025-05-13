@@ -19,6 +19,7 @@ import docscanner.composeapp.generated.resources.preparing_images
 import docscanner.composeapp.generated.resources.rename_pdf_failed
 import docscanner.composeapp.generated.resources.renaming_pdf
 import docscanner.composeapp.generated.resources.upload_images_failed
+import docscanner.composeapp.generated.resources.upload_images_success
 import docscanner.composeapp.generated.resources.uploading_images
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
@@ -52,6 +53,7 @@ import org.bibletranslationtools.docscanner.data.models.getRepo
 import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
 import org.bibletranslationtools.docscanner.data.repository.PdfRepository
 import org.bibletranslationtools.docscanner.ui.common.ConfirmAction
+import org.bibletranslationtools.docscanner.ui.screens.project.components.UploadStatus
 import org.bibletranslationtools.docscanner.utils.FileUtils
 import org.jetbrains.compose.resources.getString
 import java.io.File
@@ -66,6 +68,7 @@ data class ProjectState(
     val confirmAction: ConfirmAction? = null,
     val alert: Alert? = null,
     val progress: Progress? = null,
+    val uploadStatus: UploadStatus? = null
 )
 
 sealed class ProjectEvent {
@@ -220,7 +223,12 @@ class ProjectViewModel(
                             created = created
                         )
                         val response = transcriberApi.uploadImage(imageRequest)
-                        println(response?.success)
+
+                        if (response?.success == true) {
+                            logger.info { "Image uploaded: ${path.name}" }
+                        } else {
+                            logger.warn { "Image upload failed: ${path.name}" }
+                        }
                     }
 
                     updateProgress(
@@ -240,6 +248,14 @@ class ProjectViewModel(
             }
 
             updateProgress(null)
+
+            updateUploadStatus(
+                UploadStatus(
+                    message = getString(Res.string.upload_images_success),
+                    url = TranscriberApi.BASE_URL,
+                    onDismiss = { updateUploadStatus(null) }
+                )
+            )
         }
     }
 
@@ -406,6 +422,12 @@ class ProjectViewModel(
     private fun updateUser(user: HtrUser?) {
         _state.update {
             it.copy(user = user)
+        }
+    }
+
+    private fun updateUploadStatus(status: UploadStatus?) {
+        _state.update {
+            it.copy(uploadStatus = status)
         }
     }
 

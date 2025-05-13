@@ -12,6 +12,7 @@ import org.bibletranslationtools.docscanner.data.repository.PreferenceRepository
 import org.bibletranslationtools.docscanner.data.repository.getPref
 import org.bibletranslationtools.docscanner.utils.identificator
 import org.bibletranslationtools.docscanner.utils.readString
+import org.bibletranslationtools.docscanner.utils.trimMultiline
 import org.jetbrains.compose.resources.getString
 import org.unfoldingword.gogsclient.GogsAPI
 import org.unfoldingword.gogsclient.PublicKey
@@ -70,7 +71,12 @@ class RegisterSSHKeys(
             return true
         } else {
             val response = api.lastResponse
-            println("Failed to register the public key. Gogs responded with " + response.code + ": " + response.data)
+            logger.warn {
+                """
+                    Failed to register the public key.
+                    Gogs responded with ${response.code}: ${response.data}
+                """.trimMultiline()
+            }
             response.exception?.printStackTrace()
         }
 
