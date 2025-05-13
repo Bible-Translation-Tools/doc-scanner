@@ -13,6 +13,11 @@ SELECT *
 FROM PdfEntity
 WHERE projectId = :projectId;
 
+get:
+SELECT *
+FROM PdfEntity
+WHERE id = :id;
+
 add:
 INSERT INTO PdfEntity(
     name,

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
@@ -31,6 +32,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import docscanner.composeapp.generated.resources.Res
 import docscanner.composeapp.generated.resources.app_name
+import docscanner.composeapp.generated.resources.login
 import docscanner.composeapp.generated.resources.logout
 import docscanner.composeapp.generated.resources.no_project_found
 import org.bibletranslationtools.docscanner.ui.common.AlertDialog
@@ -90,15 +92,22 @@ class HomeScreen : Screen {
         Scaffold(
             topBar = {
                 val extraActions = mutableListOf<ExtraAction>()
-                if (state.user != null) {
-                    extraActions.add(
+                extraActions.add(
+                    if (state.user != null) {
                         ExtraAction(
                             title = stringResource(Res.string.logout),
                             icon = Icons.AutoMirrored.Filled.Logout,
                             onClick = { viewModel.onEvent(HomeEvent.Logout) }
                         )
-                    )
-                }
+                    } else {
+                        ExtraAction(
+                            title = stringResource(Res.string.login),
+                            icon = Icons.AutoMirrored.Filled.Login,
+                            onClick = { showLoginDialog = true }
+                        )
+                    }
+                )
+
                 TopNavigationBar(
                     title = stringResource(Res.string.app_name),
                     user = state.user,
@@ -147,8 +156,7 @@ class HomeScreen : Screen {
                                 if (state.user != null) {
                                     viewModel.onEvent(HomeEvent.UploadProject(project))
                                 } else {
-                                    viewModel.onEvent(HomeEvent.UpdateProject(project))
-                                    showLoginDialog = true
+                                    viewModel.onEvent(HomeEvent.LoginRequest)
                                 }
                             },
                             onShareClick = {

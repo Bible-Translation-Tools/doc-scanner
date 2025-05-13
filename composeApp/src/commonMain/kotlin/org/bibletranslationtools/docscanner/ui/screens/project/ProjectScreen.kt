@@ -29,7 +29,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
-import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_JPEG
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_PDF
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.SCANNER_MODE_FULL
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
@@ -38,6 +37,7 @@ import docscanner.composeapp.generated.resources.Res
 import docscanner.composeapp.generated.resources.document_scanner
 import docscanner.composeapp.generated.resources.no_scan_found
 import docscanner.composeapp.generated.resources.scan
+import org.bibletranslationtools.docscanner.data.models.Image
 import org.bibletranslationtools.docscanner.data.models.Pdf
 import org.bibletranslationtools.docscanner.data.models.Project
 import org.bibletranslationtools.docscanner.data.models.getTitle
@@ -68,7 +68,7 @@ data class ProjectScreen(
         }
 
         var renamePdf by remember { mutableStateOf<Pdf?>(null) }
-        var uploadImages by remember { mutableStateOf<Pdf?>(null) }
+        var extractedImages by remember { mutableStateOf<List<Image>>(emptyList()) }
 
         val activity = LocalActivity.current
         val context = LocalContext.current
@@ -89,6 +89,9 @@ data class ProjectScreen(
                     browserIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                     context.startActivity(browserIntent)
                 }
+                is ProjectEvent.ImagesExtracted -> {
+                    extractedImages = (event as ProjectEvent.ImagesExtracted).images
+                }
                 else -> Unit
             }
         }
@@ -100,11 +103,8 @@ data class ProjectScreen(
                 val scanningResult = GmsDocumentScanningResult.fromActivityResultIntent(result.data)
 
                 scanningResult?.let { scanned ->
-                    val images = scanned.pages?.map { it.imageUri } ?: emptyList()
-                    if (images.isNotEmpty()) {
-                        scanned.pdf?.let { pdf ->
-                            viewModel.onEvent(ProjectEvent.CreatePdf(pdf.uri, images, context))
-                        }
+                    scanned.pdf?.let { pdf ->
+                        viewModel.onEvent(ProjectEvent.CreatePdf(pdf.uri, context))
                     }
                 }
             }
@@ -115,7 +115,7 @@ data class ProjectScreen(
                 GmsDocumentScannerOptions.Builder()
                     .setPageLimit(1000)
                     .setGalleryImportAllowed(true)
-                    .setResultFormats(RESULT_FORMAT_PDF, RESULT_FORMAT_JPEG)
+                    .setResultFormats(RESULT_FORMAT_PDF)
                     .setScannerMode(SCANNER_MODE_FULL)
                     .build()
             )
@@ -185,7 +185,7 @@ data class ProjectScreen(
                                 renamePdf = pdf
                             },
                             onUploadClick = {
-                                uploadImages = pdf
+                                viewModel.onEvent(ProjectEvent.ExtractImages(pdf))
                             },
                             onDeleteClick = {
                                 viewModel.onEvent(ProjectEvent.DeletePdf(pdf))
@@ -221,11 +221,11 @@ data class ProjectScreen(
                 )
             }
 
-            uploadImages?.let { pdf ->
+            if (extractedImages.isNotEmpty()) {
                 UploadImagesDialog(
-                    images = pdf.images,
+                    images = extractedImages,
                     onUpload = { viewModel.onEvent(ProjectEvent.UploadImages(it)) },
-                    onDismissRequest = { uploadImages = null }
+                    onDismissRequest = { extractedImages = emptyList() }
                 )
             }
         }

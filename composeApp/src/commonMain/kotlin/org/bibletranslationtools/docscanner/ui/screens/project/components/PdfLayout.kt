@@ -31,8 +31,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import docscanner.composeapp.generated.resources.Res
-import docscanner.composeapp.generated.resources.delete
-import docscanner.composeapp.generated.resources.rename
+import docscanner.composeapp.generated.resources.delete_pdf
+import docscanner.composeapp.generated.resources.rename_pdf
 import docscanner.composeapp.generated.resources.upload_images
 import org.bibletranslationtools.docscanner.data.models.Pdf
 import org.bibletranslationtools.docscanner.utils.format
@@ -102,7 +102,7 @@ fun PdfLayout(
                     onDismissRequest = onDismissRequest
                 ) {
                     DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.rename)) },
+                        text = { Text(stringResource(Res.string.rename_pdf)) },
                         leadingIcon = {
                             Icon(
                                 Icons.Default.DriveFileRenameOutline,
@@ -130,7 +130,7 @@ fun PdfLayout(
                     )
 
                     DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.delete)) },
+                        text = { Text(stringResource(Res.string.delete_pdf)) },
                         leadingIcon = {
                             Icon(
                                 Icons.Default.Delete,

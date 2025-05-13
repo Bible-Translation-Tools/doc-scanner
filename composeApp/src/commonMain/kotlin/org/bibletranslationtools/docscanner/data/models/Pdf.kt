@@ -10,8 +10,7 @@ data class Pdf(
     val size: String,
     val created: String,
     val modified: String,
-    val projectId: Long,
-    val images: List<Image>
+    val projectId: Long
 ) : java.io.Serializable
 
 fun Pdf.toEntity() = PdfEntity(
@@ -23,12 +22,11 @@ fun Pdf.toEntity() = PdfEntity(
     modified = modified
 )
 
-fun PdfEntity.toModel(images: List<Image>) = Pdf(
+fun PdfEntity.toModel() = Pdf(
     id = id,
     name = name,
     size = size,
     created = created,
     modified = modified,
-    projectId = projectId,
-    images = images
+    projectId = projectId
 )

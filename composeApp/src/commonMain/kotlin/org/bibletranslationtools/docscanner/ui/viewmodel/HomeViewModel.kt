@@ -14,6 +14,7 @@ import docscanner.composeapp.generated.resources.logged_out
 import docscanner.composeapp.generated.resources.logging_in
 import docscanner.composeapp.generated.resources.logging_out
 import docscanner.composeapp.generated.resources.login_failed
+import docscanner.composeapp.generated.resources.login_needed
 import docscanner.composeapp.generated.resources.not_authorized
 import docscanner.composeapp.generated.resources.push_rejected
 import docscanner.composeapp.generated.resources.push_success
@@ -79,6 +80,7 @@ sealed class HomeEvent {
     data class ShareProject(val project: Project, val context: Context): HomeEvent()
     data class ProjectShared(val uri: Uri): HomeEvent()
     data class Login(val username: String, val password: String) : HomeEvent()
+    data object LoginRequest : HomeEvent()
     data object Logout : HomeEvent()
 }
 
@@ -134,6 +136,7 @@ class HomeViewModel(
             is HomeEvent.DeleteProject -> deleteProject(event.project)
             is HomeEvent.ShareProject -> shareProject(event.project, event.context)
             is HomeEvent.Login -> login(event.username, event.password)
+            is HomeEvent.LoginRequest -> requestLogin()
             is HomeEvent.Logout -> logout()
             else -> resetChannel()
         }
@@ -327,6 +330,16 @@ class HomeViewModel(
             }
 
             updateProgress(null)
+        }
+    }
+
+    private fun requestLogin() {
+        screenModelScope.launch {
+            updateAlert(
+                Alert(getString(Res.string.login_needed)) {
+                    updateAlert(null)
+                }
+            )
         }
     }
 

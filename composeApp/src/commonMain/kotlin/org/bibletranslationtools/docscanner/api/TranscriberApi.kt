@@ -11,6 +11,7 @@ import io.ktor.client.plugins.cookies.HttpCookies
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.parameters
@@ -34,7 +35,7 @@ data class ImageRequest(
     val model: String = Model.OPENAI.value,
     val prompt: String = DEFAULT_PROMPT,
     val systemPrompt: String = DEFAULT_SYSTEM_PROMPT,
-    val created: Int
+    val created: Long
 )
 
 @Serializable

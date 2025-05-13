@@ -1,7 +1,11 @@
 package org.bibletranslationtools.docscanner.ui.viewmodel
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.os.ParcelFileDescriptor
+import androidx.core.graphics.createBitmap
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import docscanner.composeapp.generated.resources.Res
@@ -11,8 +15,11 @@ import docscanner.composeapp.generated.resources.delete_pdf_confirm
 import docscanner.composeapp.generated.resources.delete_pdf_failed
 import docscanner.composeapp.generated.resources.deleting_pdf
 import docscanner.composeapp.generated.resources.loading_pdfs
+import docscanner.composeapp.generated.resources.preparing_images
 import docscanner.composeapp.generated.resources.rename_pdf_failed
 import docscanner.composeapp.generated.resources.renaming_pdf
+import docscanner.composeapp.generated.resources.upload_images_failed
+import docscanner.composeapp.generated.resources.uploading_images
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,9 +33,13 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.io.asOutputStream
+import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.readByteArray
 import org.bibletranslationtools.docscanner.api.HtrUser
+import org.bibletranslationtools.docscanner.api.ImageRequest
 import org.bibletranslationtools.docscanner.api.TranscriberApi
 import org.bibletranslationtools.docscanner.data.models.Alert
 import org.bibletranslationtools.docscanner.data.models.Image
@@ -41,8 +52,10 @@ import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
 import org.bibletranslationtools.docscanner.data.repository.PdfRepository
 import org.bibletranslationtools.docscanner.ui.common.ConfirmAction
 import org.bibletranslationtools.docscanner.utils.FileUtils
-import org.bibletranslationtools.docscanner.utils.format
 import org.jetbrains.compose.resources.getString
+import java.io.File
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -56,16 +69,14 @@ data class ProjectState(
 
 sealed class ProjectEvent {
     data object Idle : ProjectEvent()
-    data class CreatePdf(
-        val pdfUri: Uri,
-        val images: List<Uri>,
-        val context: Context
-    ) : ProjectEvent()
+    data class CreatePdf(val pdfUri: Uri, val context: Context) : ProjectEvent()
     data class RenamePdf(val pdf: Pdf, val newName: String) : ProjectEvent()
     data class DeletePdf(val pdf: Pdf) : ProjectEvent()
     data class OpenPdf(val pdf: Pdf, val context: Context) : ProjectEvent()
     data class PdfOpened(val uri: Uri) : ProjectEvent()
     data class UploadImages(val images: List<Image>) : ProjectEvent()
+    data class ExtractImages(val pdf: Pdf): ProjectEvent()
+    data class ImagesExtracted(val images: List<Image>): ProjectEvent()
 }
 
 class ProjectViewModel(
@@ -89,11 +100,12 @@ class ProjectViewModel(
 
     fun onEvent(event: ProjectEvent) {
         when (event) {
-            is ProjectEvent.CreatePdf -> createPdf(event.pdfUri, event.images, event.context)
+            is ProjectEvent.CreatePdf -> createPdf(event.pdfUri, event.context)
             is ProjectEvent.RenamePdf -> renamePdf(event.pdf, event.newName)
             is ProjectEvent.DeletePdf -> deletePdf(event.pdf)
             is ProjectEvent.OpenPdf -> openPdf(event.pdf, event.context)
             is ProjectEvent.UploadImages -> uploadImages(event.images)
+            is ProjectEvent.ExtractImages -> extractImages(event.pdf)
             else -> resetChannel()
         }
     }
@@ -113,18 +125,16 @@ class ProjectViewModel(
         updatePdfs(pdfRepository.getAll(project))
     }
 
-    @OptIn(ExperimentalUuidApi::class)
-    private fun createPdf(
-        pdfUri: Uri,
-        images: List<Uri>,
-        context: Context
-    ) {
+    private fun createPdf(pdfUri: Uri, context: Context) {
         screenModelScope.launch(Dispatchers.IO) {
             updateProgress(Progress(-1f, getString(Res.string.creating_pdf)))
 
+            val lastPdfId = pdfRepository.lastId()
+            val newPdfId = lastPdfId + 1
+
             val date = Clock.System.now()
             val localDate = date.toLocalDateTime(TimeZone.currentSystemDefault())
-            val pdfName = localDate.format()
+            val pdfName = "${project.getName()}_$newPdfId"
             val pdfFileName = "$pdfName.pdf"
             val projectDir = Path(directoryProvider.projectsDir, project.getName())
             val pdfFile = Path(projectDir, pdfFileName)
@@ -142,36 +152,11 @@ class ProjectViewModel(
                 size = FileUtils.getFileSize(pdfFile),
                 created = localDate.toString(),
                 modified = localDate.toString(),
-                projectId = project.id,
-                images = emptyList()
+                projectId = project.id
             )
 
             try {
                 pdfRepository.insert(pdf)
-                val pdfId = pdfRepository.lastId()
-
-                images.forEach { imageUri ->
-                    val timestamp = date.epochSeconds
-                    val imageName = "${Uuid.random()}.jpg"
-
-                    val pdfDir = Path(projectDir, pdfName)
-                    val imageFile = Path(pdfDir, imageName)
-
-                    FileUtils.writeUriToPath(
-                        context = context,
-                        fileUri = imageUri,
-                        path = imageFile
-                    )
-
-                    val image = Image(
-                        name = imageName,
-                        size = FileUtils.getFileSize(imageFile),
-                        created = timestamp,
-                        pdfId = pdfId
-                    )
-
-                    pdfRepository.insertImage(image)
-                }
             } catch (e: Exception) {
                 e.printStackTrace()
                 updateAlert(
@@ -202,9 +187,56 @@ class ProjectViewModel(
         }
     }
 
+    @OptIn(ExperimentalEncodingApi::class, ExperimentalUuidApi::class)
     private fun uploadImages(images: List<Image>) {
-        images.forEach {
-            println(it.name)
+        screenModelScope.launch {
+            if (images.isEmpty()) return@launch
+
+            updateProgress(Progress(0f, getString(Res.string.uploading_images)))
+
+            try {
+                val total = images.size
+
+                images.forEachIndexed { index, image ->
+                    val path = Path(image.path)
+                    SystemFileSystem.source(path).buffered().use { source ->
+                        val bytes = source.readByteArray()
+                        val base64 = "data:image/jpeg;base64,${Base64.Default.encode(bytes)}"
+                        val imageId = Uuid.random().toString()
+                        val timestampPattern = "\\d+".toRegex()
+                        val created = timestampPattern
+                            .find(path.name)?.value?.toLong() ?: Clock.System.now().epochSeconds
+
+                        val imageRequest = ImageRequest(
+                            image = base64,
+                            imageId = imageId,
+                            filename = path.name,
+                            languageCode = project.language.slug,
+                            bookCode = project.book.slug,
+                            chapter = image.chapter,
+                            created = created
+                        )
+                        val response = transcriberApi.uploadImage(imageRequest)
+                        println(response?.success)
+                    }
+
+                    updateProgress(
+                        Progress(
+                            (index+1).toFloat() / total,
+                            getString(Res.string.uploading_images)
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                updateAlert(
+                    Alert(getString(Res.string.upload_images_failed)) {
+                        updateAlert(null)
+                    }
+                )
+            }
+
+            updateProgress(null)
         }
     }
 
@@ -273,18 +305,6 @@ class ProjectViewModel(
                         modified = now.toString()
                     )
                     updatePdf(newPdf)
-
-                    val oldImgDir = Path(
-                        projectDir,
-                        pdf.name.replace(".pdf", "")
-                    )
-
-                    val newImgDir = Path(
-                        projectDir,
-                        newNameNormalized.replace(".pdf", "")
-                    )
-
-                    FileUtils.renamePath(oldImgDir, newImgDir)
                 } catch (e: Exception) {
                     e.printStackTrace()
                     updateAlert(
@@ -298,6 +318,55 @@ class ProjectViewModel(
                 loadPdfs()
                 updateProgress(null)
             }
+        }
+    }
+
+    private fun extractImages(pdf: Pdf) {
+        screenModelScope.launch(Dispatchers.IO) {
+            updateProgress(Progress(-1f, getString(Res.string.preparing_images)))
+
+            val projectDir = Path(directoryProvider.projectsDir, project.getName())
+            val pdfPath = Path(projectDir, pdf.name)
+            val pdfFile = File(pdfPath.toString())
+
+            val images = mutableListOf<Image>()
+
+            ParcelFileDescriptor.open(
+                pdfFile,
+                ParcelFileDescriptor.MODE_READ_ONLY
+            ).use { descriptor ->
+                PdfRenderer(descriptor).use { renderer ->
+                    for (index in 0 until renderer.pageCount) {
+                        renderer.openPage(index).use { page ->
+                            val bitmap = createBitmap(page.width, page.height)
+                            page.render(
+                                bitmap,
+                                null,
+                                null,
+                                PdfRenderer.Page.RENDER_MODE_FOR_PRINT
+                            )
+
+                            val imageFile = directoryProvider.createTempFile(
+                                "image",
+                                ".jpg"
+                            )
+                            SystemFileSystem.sink(imageFile).buffered().use {
+                                it.asOutputStream().use { out ->
+                                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                                }
+                            }
+                            images.add(
+                                Image(path = imageFile.toString(), chapter = 1)
+                            )
+                            bitmap.recycle()
+                        }
+                    }
+                }
+            }
+
+            updateProgress(null)
+
+            _event.send(ProjectEvent.ImagesExtracted(images))
         }
     }
 

@@ -1,6 +1,5 @@
 package org.bibletranslationtools.docscanner.ui.viewmodel
 
-import android.content.Context
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import docscanner.composeapp.generated.resources.Res
@@ -26,6 +25,7 @@ import org.bibletranslationtools.docscanner.data.models.Language
 import org.bibletranslationtools.docscanner.data.models.Level
 import org.bibletranslationtools.docscanner.data.models.Progress
 import org.bibletranslationtools.docscanner.data.repository.BookRepository
+import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
 import org.bibletranslationtools.docscanner.data.repository.LanguageRepository
 import org.bibletranslationtools.docscanner.data.repository.LevelRepository
 import org.bibletranslationtools.docscanner.data.repository.PreferenceRepository
@@ -44,11 +44,11 @@ sealed class SplashEvent {
 }
 
 class SplashViewModel(
-    private val context: Context,
     private val preferenceRepository: PreferenceRepository,
     private val languageRepository: LanguageRepository,
     private val bookRepository: BookRepository,
-    private val levelRepository: LevelRepository
+    private val levelRepository: LevelRepository,
+    private val directoryProvider: DirectoryProvider
 ) : ScreenModel {
 
     private var _state = MutableStateFlow(SplashState())
@@ -69,6 +69,9 @@ class SplashViewModel(
                 Settings.KEY_PREF_INITIALIZED,
                 false
             )
+
+            // clear cache
+            directoryProvider.clearCache()
 
             if (!initialized) {
                 updateProgress(Progress(-1f, getString(Res.string.initializing_languages)))
