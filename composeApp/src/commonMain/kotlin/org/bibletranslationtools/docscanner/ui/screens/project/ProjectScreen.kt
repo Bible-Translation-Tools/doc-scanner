@@ -21,6 +21,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -35,8 +36,11 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import docscanner.composeapp.generated.resources.Res
 import docscanner.composeapp.generated.resources.document_scanner
+import docscanner.composeapp.generated.resources.login_needed
 import docscanner.composeapp.generated.resources.no_scan_found
 import docscanner.composeapp.generated.resources.scan
+import kotlinx.coroutines.launch
+import org.bibletranslationtools.docscanner.api.HtrUser
 import org.bibletranslationtools.docscanner.data.models.Image
 import org.bibletranslationtools.docscanner.data.models.Pdf
 import org.bibletranslationtools.docscanner.data.models.Project
@@ -55,12 +59,14 @@ import org.bibletranslationtools.docscanner.ui.screens.project.components.Upload
 import org.bibletranslationtools.docscanner.ui.viewmodel.ProjectEvent
 import org.bibletranslationtools.docscanner.ui.viewmodel.ProjectViewModel
 import org.bibletranslationtools.docscanner.utils.showToast
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.core.parameter.parametersOf
 
 data class ProjectScreen(
-    private val project: Project
+    private val project: Project,
+    private val user: HtrUser?
 ) : Screen {
     @Composable
     override fun Content() {
@@ -73,6 +79,7 @@ data class ProjectScreen(
 
         val activity = LocalActivity.current
         val context = LocalContext.current
+        val uiScope = rememberCoroutineScope()
 
         val state by viewModel.state.collectAsStateWithLifecycle()
         val event by viewModel.event.collectAsStateWithLifecycle(ProjectEvent.Idle)
@@ -186,7 +193,13 @@ data class ProjectScreen(
                                 renamePdf = pdf
                             },
                             onUploadClick = {
-                                viewModel.onEvent(ProjectEvent.ExtractImages(pdf))
+                                if (user != null) {
+                                    viewModel.onEvent(ProjectEvent.ExtractImages(pdf))
+                                } else {
+                                    uiScope.launch {
+                                        context.showToast(getString(Res.string.login_needed))
+                                    }
+                                }
                             },
                             onDeleteClick = {
                                 viewModel.onEvent(ProjectEvent.DeletePdf(pdf))

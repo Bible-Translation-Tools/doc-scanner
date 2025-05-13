@@ -145,7 +145,7 @@ class HomeScreen : Screen {
                             project = project,
                             menuShown = expandedItemId == project.id,
                             onCardClick = {
-                                navigator.push(ProjectScreen(project))
+                                navigator.push(ProjectScreen(project, state.user))
                             },
                             onMoreClick = {
                                 expandedItemId = if (expandedItemId != project.id) {

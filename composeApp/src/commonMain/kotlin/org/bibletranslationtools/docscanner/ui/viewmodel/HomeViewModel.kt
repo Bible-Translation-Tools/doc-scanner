@@ -1,5 +1,6 @@
 package org.bibletranslationtools.docscanner.ui.viewmodel
 
+import android.accounts.NetworkErrorException
 import android.content.Context
 import android.net.Uri
 import cafe.adriel.voyager.core.model.ScreenModel
@@ -63,7 +64,6 @@ import org.jetbrains.compose.resources.getString
 data class HomeState(
     val user: HtrUser? = null,
     val projects: List<Project> = emptyList(),
-    val project: Project? = null,
     val confirmAction: ConfirmAction? = null,
     val alert: Alert? = null,
     val progress: Progress? = null,
@@ -75,7 +75,6 @@ data class HomeState(
 sealed class HomeEvent {
     data object Idle : HomeEvent()
     data class CreateProject(val project: Project): HomeEvent()
-    data class UpdateProject(val project: Project?) : HomeEvent()
     data class UploadProject(val project: Project): HomeEvent()
     data class DeleteProject(val project: Project): HomeEvent()
     data class ShareProject(val project: Project, val context: Context): HomeEvent()
@@ -135,7 +134,6 @@ class HomeViewModel(
         when (event) {
             is HomeEvent.CreateProject -> createProject(event.project)
             is HomeEvent.UploadProject -> uploadProject(event.project)
-            is HomeEvent.UpdateProject -> updateProject(event.project)
             is HomeEvent.DeleteProject -> deleteProject(event.project)
             is HomeEvent.ShareProject -> shareProject(event.project, event.context)
             is HomeEvent.Login -> login(event.username, event.password)
@@ -313,22 +311,18 @@ class HomeViewModel(
         screenModelScope.launch(Dispatchers.IO) {
             updateProgress(Progress(-1f, getString(Res.string.logging_in)))
 
-            val result = htrLogin.execute(username, password)
+            val loginError = getString(Res.string.login_failed)
 
-            result.user?.let { user ->
-                updateUser(user)
-                doRegisterSshKeys()
-
-                _state.value.project?.let { project ->
-                    _state.value.user?.let { user ->
-                        doUploadProject(project, user)
-                    }
-                }
-            } ?: run {
+            try {
+                val result = htrLogin.execute(username, password)
+                result.user?.let { user ->
+                    updateUser(user)
+                    // doRegisterSshKeys()
+                } ?: throw NetworkErrorException("User is null")
+            } catch (e: Exception) {
+                logger.error(e) { loginError }
                 updateAlert(
-                    Alert(getString(Res.string.login_failed)) {
-                        updateAlert(null)
-                    }
+                    Alert(loginError) { updateAlert(null) }
                 )
             }
 
@@ -412,12 +406,6 @@ class HomeViewModel(
     private fun updateAlert(alert: Alert?) {
         _state.update {
             it.copy(alert = alert)
-        }
-    }
-
-    private fun updateProject(project: Project?) {
-        _state.update {
-            it.copy(project = project)
         }
     }
 

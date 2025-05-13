@@ -200,9 +200,10 @@ class ProjectViewModel(
 
             updateProgress(Progress(0f, getString(Res.string.uploading_images)))
 
-            try {
-                val total = images.size
+            val total = images.size
+            var uploaded = 0
 
+            try {
                 images.forEachIndexed { index, image ->
                     val path = Path(image.path)
                     SystemFileSystem.source(path).buffered().use { source ->
@@ -225,6 +226,7 @@ class ProjectViewModel(
                         val response = transcriberApi.uploadImage(imageRequest)
 
                         if (response?.success == true) {
+                            uploaded++
                             logger.info { "Image uploaded: ${path.name}" }
                         } else {
                             logger.warn { "Image upload failed: ${path.name}" }
@@ -249,10 +251,20 @@ class ProjectViewModel(
 
             updateProgress(null)
 
+            val message: String
+            val url: String?
+            if (uploaded == total) {
+                message = getString(Res.string.upload_images_success)
+                url = TranscriberApi.BASE_URL
+            } else {
+                message = getString(Res.string.upload_images_failed)
+                url = null
+            }
+
             updateUploadStatus(
                 UploadStatus(
-                    message = getString(Res.string.upload_images_success),
-                    url = TranscriberApi.BASE_URL,
+                    message = message,
+                    url = url,
                     onDismiss = { updateUploadStatus(null) }
                 )
             )

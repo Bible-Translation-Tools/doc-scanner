@@ -71,7 +71,7 @@
     <string name="upload_images">Upload to Transcriber</string>
     <string name="uploading_images">Uploading images to Transcriber</string>
     <string name="upload_images_success">Successfully uploaded to Transcriber</string>
-    <string name="upload_images_failed">Upload to Transcriber failed</string>
+    <string name="upload_images_failed">Upload to Transcriber failed. Check logs for details</string>
     <string name="login_needed">Please login first</string>
     <string name="dismiss">Dismiss</string>
     <string name="preparing_images">Preparing images...</string>

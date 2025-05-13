@@ -17,7 +17,7 @@ data class HtrUser(
     val tokenSha1: String,
     val tokenLastEight: String,
     val tokenScopes: List<String>?,
-)
+) : java.io.Serializable
 
 fun HtrUser.toGogsUser(): User {
     val json = JSONObject()

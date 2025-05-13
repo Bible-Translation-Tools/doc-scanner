@@ -15,6 +15,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,13 +30,15 @@ import org.jetbrains.compose.resources.stringResource
 
 data class UploadStatus(
     val message: String,
-    val url: String,
+    val url: String? = null,
     val onDismiss: () -> Unit
 )
 
 @Composable
 fun UploadCompleteDialog(status: UploadStatus) {
     val uriHandler = LocalUriHandler.current
+
+    val url by remember { mutableStateOf(status.url) }
 
     Dialog(onDismissRequest = status.onDismiss) {
         Surface(
@@ -48,11 +53,16 @@ fun UploadCompleteDialog(status: UploadStatus) {
                     .fillMaxHeight()
             ) {
                 Text(text = status.message)
-                Spacer(modifier = Modifier.height(16.dp))
-                TextButton(onClick = { uriHandler.openUri(status.url) }) {
-                    Text(text = status.url)
+
+                url?.let {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    TextButton(onClick = { uriHandler.openUri(it) }) {
+                        Text(text = it)
+                    }
                 }
+
                 Spacer(modifier = Modifier.height(16.dp))
+
                 Button(
                     onClick = status.onDismiss,
                     modifier = Modifier.width(128.dp)
