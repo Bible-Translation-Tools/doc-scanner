@@ -1,5 +1,6 @@
 package org.bibletranslationtools.docscanner.ui.viewmodel
 
+import android.accounts.NetworkErrorException
 import android.content.Context
 import android.net.Uri
 import cafe.adriel.voyager.core.model.ScreenModel
@@ -14,6 +15,7 @@ import docscanner.composeapp.generated.resources.logged_out
 import docscanner.composeapp.generated.resources.logging_in
 import docscanner.composeapp.generated.resources.logging_out
 import docscanner.composeapp.generated.resources.login_failed
+import docscanner.composeapp.generated.resources.login_needed
 import docscanner.composeapp.generated.resources.not_authorized
 import docscanner.composeapp.generated.resources.push_rejected
 import docscanner.composeapp.generated.resources.push_success
@@ -22,6 +24,7 @@ import docscanner.composeapp.generated.resources.share_project_failed
 import docscanner.composeapp.generated.resources.sharing_project
 import docscanner.composeapp.generated.resources.unknown_error
 import docscanner.composeapp.generated.resources.uploading_project
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,13 +37,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
-import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
-import org.bibletranslationtools.docscanner.data.local.Settings
-import org.bibletranslationtools.docscanner.data.local.git.GogsLogin
-import org.bibletranslationtools.docscanner.data.local.git.GogsLogout
-import org.bibletranslationtools.docscanner.data.local.git.Profile
-import org.bibletranslationtools.docscanner.data.local.git.PushProject
-import org.bibletranslationtools.docscanner.data.local.git.RegisterSSHKeys
+import org.bibletranslationtools.docscanner.api.HtrLogin
+import org.bibletranslationtools.docscanner.api.HtrUser
+import org.bibletranslationtools.docscanner.api.TranscriberApi
+import org.bibletranslationtools.docscanner.api.toGogsUser
+import org.bibletranslationtools.docscanner.data.git.PushProject
+import org.bibletranslationtools.docscanner.data.git.RegisterSSHKeys
 import org.bibletranslationtools.docscanner.data.models.Alert
 import org.bibletranslationtools.docscanner.data.models.Book
 import org.bibletranslationtools.docscanner.data.models.Language
@@ -50,22 +52,18 @@ import org.bibletranslationtools.docscanner.data.models.Project
 import org.bibletranslationtools.docscanner.data.models.getName
 import org.bibletranslationtools.docscanner.data.models.getRepo
 import org.bibletranslationtools.docscanner.data.repository.BookRepository
+import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
 import org.bibletranslationtools.docscanner.data.repository.LanguageRepository
 import org.bibletranslationtools.docscanner.data.repository.LevelRepository
-import org.bibletranslationtools.docscanner.data.repository.PreferenceRepository
 import org.bibletranslationtools.docscanner.data.repository.ProjectRepository
-import org.bibletranslationtools.docscanner.data.repository.getPref
-import org.bibletranslationtools.docscanner.data.repository.setPref
 import org.bibletranslationtools.docscanner.ui.common.ConfirmAction
 import org.bibletranslationtools.docscanner.utils.FileUtils
 import org.bibletranslationtools.docscanner.utils.deleteRecursively
 import org.jetbrains.compose.resources.getString
-import org.json.JSONObject
 
 data class HomeState(
-    val profile: Profile? = null,
+    val user: HtrUser? = null,
     val projects: List<Project> = emptyList(),
-    val project: Project? = null,
     val confirmAction: ConfirmAction? = null,
     val alert: Alert? = null,
     val progress: Progress? = null,
@@ -77,26 +75,25 @@ data class HomeState(
 sealed class HomeEvent {
     data object Idle : HomeEvent()
     data class CreateProject(val project: Project): HomeEvent()
-    data class UpdateProject(val project: Project?) : HomeEvent()
     data class UploadProject(val project: Project): HomeEvent()
     data class DeleteProject(val project: Project): HomeEvent()
     data class ShareProject(val project: Project, val context: Context): HomeEvent()
     data class ProjectShared(val uri: Uri): HomeEvent()
     data class Login(val username: String, val password: String) : HomeEvent()
+    data object LoginRequest : HomeEvent()
     data object Logout : HomeEvent()
 }
 
 class HomeViewModel(
     private val projectRepository: ProjectRepository,
-    private val preferenceRepository: PreferenceRepository,
     private val directoryProvider: DirectoryProvider,
     private val pushProject: PushProject,
-    private val gogsLogin: GogsLogin,
-    private val gogsLogout: GogsLogout,
+    private val htrLogin: HtrLogin,
     private val registerSSHKeys: RegisterSSHKeys,
     private val languageRepository: LanguageRepository,
     private val bookRepository: BookRepository,
-    private val levelRepository: LevelRepository
+    private val levelRepository: LevelRepository,
+    private val transcriberApi: TranscriberApi
 ) : ScreenModel {
 
     private var _state = MutableStateFlow(HomeState())
@@ -111,15 +108,13 @@ class HomeViewModel(
     private val _event: Channel<HomeEvent> = Channel()
     val event = _event.receiveAsFlow()
 
+    private val logger = KotlinLogging.logger {}
+
     private fun initialize() {
         screenModelScope.launch(Dispatchers.IO) {
             updateProgress(Progress(-1f, getString(Res.string.loading_projects)))
 
-            preferenceRepository.getPref<String>(Settings.KEY_PREF_PROFILE)?.let {
-                updateProfile(
-                    Profile.fromJSON(JSONObject(it))
-                )
-            }
+            updateUser(transcriberApi.getUser())
 
             updateLanguages(languageRepository.getAll())
             updateBooks(bookRepository.getAll())
@@ -139,10 +134,10 @@ class HomeViewModel(
         when (event) {
             is HomeEvent.CreateProject -> createProject(event.project)
             is HomeEvent.UploadProject -> uploadProject(event.project)
-            is HomeEvent.UpdateProject -> updateProject(event.project)
             is HomeEvent.DeleteProject -> deleteProject(event.project)
             is HomeEvent.ShareProject -> shareProject(event.project, event.context)
             is HomeEvent.Login -> login(event.username, event.password)
+            is HomeEvent.LoginRequest -> requestLogin()
             is HomeEvent.Logout -> logout()
             else -> resetChannel()
         }
@@ -171,11 +166,11 @@ class HomeViewModel(
                 val fileUri = FileUtils.getPathUri(context, zip)
                 _event.send(HomeEvent.ProjectShared(fileUri))
             } catch (e: Exception) {
-                e.printStackTrace()
+                val error = getString(Res.string.share_project_failed)
+                logger.error(e) { error }
+
                 updateAlert(
-                    Alert(getString(Res.string.share_project_failed)) {
-                        updateAlert(null)
-                    }
+                    Alert(error) { updateAlert(null) }
                 )
             }
 
@@ -224,7 +219,7 @@ class HomeViewModel(
 
     private fun uploadProject(project: Project) {
         screenModelScope.launch(Dispatchers.IO) {
-            _state.value.profile?.let {
+            _state.value.user?.let {
                 doUploadProject(project, it)
             } ?: run {
                 updateAlert(
@@ -240,10 +235,15 @@ class HomeViewModel(
 
     private suspend fun doUploadProject(
         project: Project,
-        profile: Profile
+        user: HtrUser,
     ) {
         updateProgress(Progress(-1f, getString(Res.string.uploading_project)))
-        val result = pushProject.execute(project, profile)
+
+        val repo = project.getRepo(directoryProvider)
+        repo.setAuthor(user.wacsUsername, user.wacsUserEmail)
+        repo.commit()
+
+        val result = pushProject.execute(project, user.toGogsUser())
         when {
             result.status == PushProject.Status.OK -> {
                 updateAlert(
@@ -287,14 +287,14 @@ class HomeViewModel(
     private suspend fun doRegisterSshKeys(project: Project? = null) {
         updateProgress(Progress(-1f, getString(Res.string.registering_ssh_keys)))
 
-        val registered = _state.value.profile?.let {
-            registerSSHKeys.execute(true, it)
+        val registered = _state.value.user?.let {
+            registerSSHKeys.execute(true, it.toGogsUser())
         } == true
 
         if (registered) {
             project?.let { proj ->
-                _state.value.profile?.let { profile ->
-                    doUploadProject(proj, profile)
+                _state.value.user?.let { user ->
+                    doUploadProject(proj, user)
                 }
             }
         } else {
@@ -311,30 +311,18 @@ class HomeViewModel(
         screenModelScope.launch(Dispatchers.IO) {
             updateProgress(Progress(-1f, getString(Res.string.logging_in)))
 
-            val result = gogsLogin.execute(username, password)
-            result.user?.let { user ->
-                val profileString = preferenceRepository.getPref<String>(Settings.KEY_PREF_PROFILE)
-                updateProfile(
-                    Profile.fromJSON(
-                        profileString?.let { JSONObject(it) }
-                    ).also {
-                        it.login(result.user.fullName, user)
-                        val string = it.toJSON().toString()
-                        preferenceRepository.setPref(Settings.KEY_PREF_PROFILE, string)
-                    }
-                )
-                doRegisterSshKeys()
+            val loginError = getString(Res.string.login_failed)
 
-                _state.value.project?.let { project ->
-                    _state.value.profile?.let { profile ->
-                        doUploadProject(project, profile)
-                    }
-                }
-            } ?: run {
+            try {
+                val result = htrLogin.execute(username, password)
+                result.user?.let { user ->
+                    updateUser(user)
+                    // doRegisterSshKeys()
+                } ?: throw NetworkErrorException("User is null")
+            } catch (e: Exception) {
+                logger.error(e) { loginError }
                 updateAlert(
-                    Alert(getString(Res.string.login_failed)) {
-                        updateAlert(null)
-                    }
+                    Alert(loginError) { updateAlert(null) }
                 )
             }
 
@@ -342,17 +330,25 @@ class HomeViewModel(
         }
     }
 
+    private fun requestLogin() {
+        screenModelScope.launch {
+            updateAlert(
+                Alert(getString(Res.string.login_needed)) {
+                    updateAlert(null)
+                }
+            )
+        }
+    }
+
     private fun logout() {
         screenModelScope.launch(Dispatchers.IO) {
             updateProgress(Progress(-1f, getString(Res.string.logging_out)))
 
-            _state.value.profile?.let {
-                gogsLogout.execute(it)
-                it.logout()
-                preferenceRepository.setPref<String>(Settings.KEY_PREF_PROFILE, null)
+            _state.value.user?.let {
+                transcriberApi.logout()
                 SystemFileSystem.deleteRecursively(directoryProvider.sshKeysDir)
 
-                updateProfile(null)
+                updateUser(null)
 
                 updateAlert(
                     Alert(getString(Res.string.logged_out)) {
@@ -389,9 +385,9 @@ class HomeViewModel(
         }
     }
 
-    private fun updateProfile(profile: Profile?) {
+    private fun updateUser(user: HtrUser?) {
         _state.update {
-            it.copy(profile = profile)
+            it.copy(user = user)
         }
     }
 
@@ -410,12 +406,6 @@ class HomeViewModel(
     private fun updateAlert(alert: Alert?) {
         _state.update {
             it.copy(alert = alert)
-        }
-    }
-
-    private fun updateProject(project: Project?) {
-        _state.update {
-            it.copy(project = project)
         }
     }
 

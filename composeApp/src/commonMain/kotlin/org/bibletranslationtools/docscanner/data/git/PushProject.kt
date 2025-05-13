@@ -1,4 +1,4 @@
-package org.bibletranslationtools.docscanner.data.local.git
+package org.bibletranslationtools.docscanner.data.git
 
 import docscanner.composeapp.generated.resources.Res
 import docscanner.composeapp.generated.resources.git_awaiting_report
@@ -13,11 +13,13 @@ import docscanner.composeapp.generated.resources.git_rejected_remote_changed
 import docscanner.composeapp.generated.resources.git_server_details
 import docscanner.composeapp.generated.resources.git_up_to_date
 import docscanner.composeapp.generated.resources.pref_default_git_server_port
-import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
-import org.bibletranslationtools.docscanner.data.local.OnProgressListener
-import org.bibletranslationtools.docscanner.data.local.Settings
+import io.github.oshai.kotlinlogging.KotlinLogging
+import org.bibletranslationtools.docscanner.OnProgressListener
+import org.bibletranslationtools.docscanner.data.Settings
 import org.bibletranslationtools.docscanner.data.models.Project
+import org.bibletranslationtools.docscanner.data.models.getName
 import org.bibletranslationtools.docscanner.data.models.getRepo
+import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
 import org.bibletranslationtools.docscanner.data.repository.PreferenceRepository
 import org.bibletranslationtools.docscanner.data.repository.getPref
 import org.eclipse.jgit.api.Git
@@ -27,6 +29,7 @@ import org.eclipse.jgit.errors.NoRemoteRepositoryException
 import org.eclipse.jgit.transport.RefSpec
 import org.eclipse.jgit.transport.RemoteRefUpdate
 import org.jetbrains.compose.resources.getString
+import org.unfoldingword.gogsclient.User
 import java.io.IOException
 
 class PushProject(
@@ -40,24 +43,21 @@ class PushProject(
     )
 
     private val max = 100
+    private val logger = KotlinLogging.logger {}
 
     suspend fun execute(
         project: Project,
-        profile: Profile,
+        user: User,
         progressListener: OnProgressListener? = null
     ): Result {
-        if (profile.gogsUser != null) {
-            val repository = getRepository.execute(project, profile, progressListener)
-            try {
-                val repo: Repo = project.getRepo(directoryProvider)
-                repo.commit()
+        val repository = getRepository.execute(project, user, progressListener)
+        try {
+            val repo: Repo = project.getRepo(directoryProvider)
+            repo.commit()
 
-                return push(repo, repository!!.sshUrl, progressListener)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        } else {
-            return Result(Status.AUTH_FAILURE, null)
+            return push(repo, repository!!.sshUrl, progressListener)
+        } catch (e: Exception) {
+            logger.error(e) { "Error pushing project ${project.getName()}" }
         }
 
         return Result(Status.UNKNOWN, null)
@@ -127,7 +127,7 @@ class PushProject(
             // give back the response message
             return Result(status, response.toString())
         } catch (e: TransportException) {
-            e.printStackTrace()
+            logger.error(e) { "Error pushing project" }
             val cause = e.cause
             if (cause != null) {
                 val subException = cause.cause
@@ -144,14 +144,14 @@ class PushProject(
             }
             return Result(status, null)
         } catch (e: OutOfMemoryError) {
-            e.printStackTrace()
+            logger.error(e) { "Error pushing project" }
             status = Status.OUT_OF_MEMORY
             return Result(status, null)
         } catch (e: java.lang.Exception) {
-            e.printStackTrace()
+            logger.error(e) { "Error pushing project" }
             return Result(status, null)
         } catch (e: Throwable) {
-            e.printStackTrace()
+            logger.error(e) { "Error pushing project" }
             return Result(status, null)
         }
     }

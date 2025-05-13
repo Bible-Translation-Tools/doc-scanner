@@ -1,6 +1,6 @@
-package org.bibletranslationtools.docscanner.data.local.git
+package org.bibletranslationtools.docscanner.data.git
 
-import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
+import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
 import org.eclipse.jgit.api.TransportConfigCallback
 import org.eclipse.jgit.transport.SshTransport
 import org.eclipse.jgit.transport.Transport

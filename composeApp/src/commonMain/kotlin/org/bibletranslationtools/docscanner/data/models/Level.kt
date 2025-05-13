@@ -5,7 +5,7 @@ import org.bibletranslationtools.database.LevelEntity
 
 @Serializable
 data class Level(
-    val id: Int = 0,
+    val id: Long = 0,
     val slug: String,
     val name: String
 ) : java.io.Serializable {
@@ -16,7 +16,7 @@ data class Level(
 
 fun Level.toEntity(): LevelEntity {
     return LevelEntity(
-        id = id.toLong(),
+        id = id,
         slug = slug,
         name = name
     )
@@ -24,7 +24,7 @@ fun Level.toEntity(): LevelEntity {
 
 fun LevelEntity.toModel(): Level {
     return Level(
-        id = id.toInt(),
+        id = id,
         slug = slug,
         name = name
     )

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
@@ -31,6 +32,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import docscanner.composeapp.generated.resources.Res
 import docscanner.composeapp.generated.resources.app_name
+import docscanner.composeapp.generated.resources.login
 import docscanner.composeapp.generated.resources.logout
 import docscanner.composeapp.generated.resources.no_project_found
 import org.bibletranslationtools.docscanner.ui.common.AlertDialog
@@ -57,7 +59,7 @@ class HomeScreen : Screen {
 
         val state by viewModel.state.collectAsStateWithLifecycle()
         val event by viewModel.event.collectAsStateWithLifecycle(HomeEvent.Idle)
-        var expandedItemId by remember { mutableStateOf<Int?>(null) }
+        var expandedItemId by remember { mutableStateOf<Long?>(null) }
 
         var showCreateProjectDialog by remember { mutableStateOf(false) }
         var showLoginDialog by remember { mutableStateOf(false) }
@@ -90,18 +92,25 @@ class HomeScreen : Screen {
         Scaffold(
             topBar = {
                 val extraActions = mutableListOf<ExtraAction>()
-                if (state.profile != null) {
-                    extraActions.add(
+                extraActions.add(
+                    if (state.user != null) {
                         ExtraAction(
                             title = stringResource(Res.string.logout),
                             icon = Icons.AutoMirrored.Filled.Logout,
                             onClick = { viewModel.onEvent(HomeEvent.Logout) }
                         )
-                    )
-                }
+                    } else {
+                        ExtraAction(
+                            title = stringResource(Res.string.login),
+                            icon = Icons.AutoMirrored.Filled.Login,
+                            onClick = { showLoginDialog = true }
+                        )
+                    }
+                )
+
                 TopNavigationBar(
                     title = stringResource(Res.string.app_name),
-                    profile = state.profile,
+                    user = state.user,
                     page = PageType.HOME,
                     extraAction = extraActions.toTypedArray()
                 )
@@ -136,7 +145,7 @@ class HomeScreen : Screen {
                             project = project,
                             menuShown = expandedItemId == project.id,
                             onCardClick = {
-                                navigator.push(ProjectScreen(project))
+                                navigator.push(ProjectScreen(project, state.user))
                             },
                             onMoreClick = {
                                 expandedItemId = if (expandedItemId != project.id) {
@@ -144,11 +153,10 @@ class HomeScreen : Screen {
                                 } else null
                             },
                             onUploadClick = {
-                                if (state.profile != null) {
+                                if (state.user != null) {
                                     viewModel.onEvent(HomeEvent.UploadProject(project))
                                 } else {
-                                    viewModel.onEvent(HomeEvent.UpdateProject(project))
-                                    showLoginDialog = true
+                                    viewModel.onEvent(HomeEvent.LoginRequest)
                                 }
                             },
                             onShareClick = {

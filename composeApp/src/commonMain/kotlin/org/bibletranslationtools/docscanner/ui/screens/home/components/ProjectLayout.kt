@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import docscanner.composeapp.generated.resources.Res
 import docscanner.composeapp.generated.resources.delete
 import docscanner.composeapp.generated.resources.share
+import docscanner.composeapp.generated.resources.upload
 import org.bibletranslationtools.docscanner.data.models.Project
 import org.bibletranslationtools.docscanner.ui.common.SingleLineText
 import org.jetbrains.compose.resources.stringResource
@@ -91,19 +92,19 @@ fun ProjectLayout(
                     expanded = menuShown,
                     onDismissRequest = onDismissRequest
                 ) {
-                    DropdownMenuItem(
-                        text = { Text("Upload") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.CloudUpload,
-                                contentDescription = null
-                            )
-                        },
-                        onClick = {
-                            onDismissRequest()
-                            onUploadClick()
-                        }
-                    )
+//                    DropdownMenuItem(
+//                        text = { Text(stringResource(Res.string.upload)) },
+//                        leadingIcon = {
+//                            Icon(
+//                                imageVector = Icons.Default.CloudUpload,
+//                                contentDescription = null
+//                            )
+//                        },
+//                        onClick = {
+//                            onDismissRequest()
+//                            onUploadClick()
+//                        }
+//                    )
 
                     DropdownMenuItem(
                         text = { Text(stringResource(Res.string.share)) },

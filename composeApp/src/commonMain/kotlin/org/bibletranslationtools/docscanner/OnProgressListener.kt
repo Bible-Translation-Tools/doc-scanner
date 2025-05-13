@@ -1,4 +1,4 @@
-package org.bibletranslationtools.docscanner.data.local
+package org.bibletranslationtools.docscanner
 
 fun interface OnProgressListener {
     /**

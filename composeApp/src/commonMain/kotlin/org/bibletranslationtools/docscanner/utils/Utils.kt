@@ -33,3 +33,7 @@ fun LocalDateTime.format(): String {
 fun identificator(): String {
     return Build.MODEL.lowercase().replace(" ", "_")
 }
+
+fun String.trimMultiline(): String {
+    return this.trimIndent().replace("\n", "")
+}

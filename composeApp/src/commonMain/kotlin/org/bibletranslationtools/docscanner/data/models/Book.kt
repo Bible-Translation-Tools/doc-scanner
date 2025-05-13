@@ -6,13 +6,13 @@ import org.bibletranslationtools.database.BookEntity
 
 @Serializable
 data class Book(
-    val id: Int = 0,
+    val id: Long = 0,
     val slug: String,
     val name: String,
     @SerialName("anth")
     val anthology: String,
     @SerialName("num")
-    val sort: Int
+    val sort: Long
 ) : java.io.Serializable {
     override fun toString(): String {
         return "[$slug] $name"
@@ -21,20 +21,20 @@ data class Book(
 
 fun Book.toEntity(): BookEntity {
     return BookEntity(
-        id = id.toLong(),
+        id = id,
         slug = slug,
         name = name,
         anthology = anthology,
-        sort = sort.toLong()
+        sort = sort
     )
 }
 
 fun BookEntity.toModel(): Book {
     return Book(
-        id = id.toInt(),
+        id = id,
         slug = slug,
         name = name,
         anthology = anthology,
-        sort = sort.toInt()
+        sort = sort
     )
 }

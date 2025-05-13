@@ -23,7 +23,7 @@ fun ProgressDialog(progress: Progress) {
     Dialog(onDismissRequest = {}) {
         Surface(
             modifier = Modifier.fillMaxWidth()
-                .height(200.dp),
+                .height(160.dp),
             shape = RoundedCornerShape(16.dp)
         ) {
             Column(

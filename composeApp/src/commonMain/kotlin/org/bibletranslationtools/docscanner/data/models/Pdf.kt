@@ -5,28 +5,28 @@ import org.bibletranslationtools.database.PdfEntity
 
 @Serializable
 data class Pdf(
-    val id: Int = 0,
+    val id: Long = 0,
     val name: String,
     val size: String,
     val created: String,
     val modified: String,
-    val projectId: Int
+    val projectId: Long
 ) : java.io.Serializable
 
 fun Pdf.toEntity() = PdfEntity(
-    id = id.toLong(),
+    id = id,
     name = name,
     size = size,
-    projectId = projectId.toLong(),
+    projectId = projectId,
     created = created,
     modified = modified
 )
 
 fun PdfEntity.toModel() = Pdf(
-    id = id.toInt(),
+    id = id,
     name = name,
     size = size,
     created = created,
     modified = modified,
-    projectId = projectId.toInt(),
+    projectId = projectId
 )
