@@ -129,6 +129,9 @@ fun UploadImagesDialog(
                                                         img
                                                     }
                                                 }
+                                                selectedImages = selectedImages.filter {
+                                                    it.path != image.path
+                                                }
                                             }
                                         },
                                         singleLine = true,
