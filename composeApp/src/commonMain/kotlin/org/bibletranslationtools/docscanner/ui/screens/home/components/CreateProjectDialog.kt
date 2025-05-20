@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -58,7 +59,7 @@ fun CreateProjectDialog(
     ) {
         Surface(
             shape = MaterialTheme.shapes.medium,
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(20.dp)
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),
@@ -102,7 +103,12 @@ fun CreateProjectDialog(
                 Row {
                     Spacer(Modifier.width(0.dp))
 
-                    Button(onClick = onDismissRequest) {
+                    Button(
+                        onClick = onDismissRequest,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.outline
+                        )
+                    ) {
                         Text(stringResource(Res.string.cancel))
                     }
                     Spacer(Modifier.width(6.dp))

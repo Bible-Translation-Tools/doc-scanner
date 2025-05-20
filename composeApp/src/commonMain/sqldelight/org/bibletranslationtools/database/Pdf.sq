@@ -13,6 +13,11 @@ SELECT *
 FROM PdfEntity
 WHERE projectId = :projectId;
 
+get:
+SELECT *
+FROM PdfEntity
+WHERE id = :id;
+
 add:
 INSERT INTO PdfEntity(
     name,
@@ -32,3 +37,6 @@ delete:
 DELETE
 FROM PdfEntity
 WHERE id = :id;
+
+lastId:
+SELECT MAX(id) FROM PdfEntity;

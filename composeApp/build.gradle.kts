@@ -25,6 +25,9 @@ kotlin {
             implementation(libs.koin.android)
             implementation(libs.koin.androidx.compose)
             implementation(libs.sqldeight.android)
+            implementation(libs.ktor.client.android)
+            implementation(libs.slf4j.jvm)
+            implementation(libs.logback.android)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -53,6 +56,12 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
 
             implementation(libs.kotlinx.io)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.client.serialization.json)
+
+            implementation(libs.coil.compose)
+            implementation(libs.kotlin.logging)
         }
     }
 
@@ -73,8 +82,8 @@ android {
         applicationId = "org.bibletranslationtools.docscanner"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 6
-        versionName = "0.3.3"
+        versionCode = 9
+        versionName = "0.4.2"
     }
     packaging {
         resources {

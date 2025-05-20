@@ -1,5 +1,6 @@
-package org.bibletranslationtools.docscanner.data.local.git
+package org.bibletranslationtools.docscanner.data.git
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.GitCommand
 import org.eclipse.jgit.api.errors.GitAPIException
@@ -15,6 +16,8 @@ class Repo (val repositoryPath: String) {
     private var storedConfig: StoredConfig? = null
     private var author: PersonIdent? = null
     private val remotes: MutableSet<String> = HashSet()
+
+    private val logger = KotlinLogging.logger {}
 
     init {
         // create the directory if missing
@@ -40,8 +43,7 @@ class Repo (val repositoryPath: String) {
         try {
             init.call()
         } catch (e: GitAPIException) {
-            // could not create repo
-            e.printStackTrace()
+            logger.error(e) { "Could not create repo at $repositoryPath" }
         }
     }
 
@@ -66,7 +68,7 @@ class Repo (val repositoryPath: String) {
         return try {
             getGit().repository.getFullBranch()
         } catch (e: IOException) {
-            e.printStackTrace()
+            logger.error(e) { "Could not get branch name" }
             null
         }
     }
@@ -78,7 +80,7 @@ class Repo (val repositoryPath: String) {
             remotes.addAll(config.getSubsections("remote"))
             return remotes
         } catch (e: IOException) {
-            e.printStackTrace()
+            logger.error(e) { "Could not get remotes" }
         }
         return hashSetOf()
     }
@@ -97,7 +99,7 @@ class Repo (val repositoryPath: String) {
             config.save()
             remotes.add(remote)
         } catch (e: IOException) {
-            e.printStackTrace()
+            logger.error(e) { "Could not set remote: $remote, $url" }
         }
     }
 
@@ -132,11 +134,9 @@ class Repo (val repositoryPath: String) {
             return command.call()
         } catch (e: JGitInternalException) {
             // throw the error if not a lock exception
-            val cause: Throwable? = getCause(e, LockFailedException::class.java)
-            if (cause == null) throw e
+            val cause: Throwable = getCause(e, LockFailedException::class.java) ?: throw e
         } catch (e: GitAPIException) {
-            val cause: Throwable? = getCause(e, LockFailedException::class.java)
-            if (cause == null) throw e
+            val cause: Throwable = getCause(e, LockFailedException::class.java) ?: throw e
         }
 
         // re-try several times
@@ -145,22 +145,15 @@ class Repo (val repositoryPath: String) {
             attempts++
             try {
                 Thread.sleep(500)
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
+            } catch (_: InterruptedException) {
             }
             try {
                 return command.call()
             } catch (e: JGitInternalException) {
                 // throw the error if not a lock exception
-                val cause: Throwable? = getCause(e, LockFailedException::class.java)
-                if (cause == null) {
-                    throw e
-                }
+                val cause: Throwable = getCause(e, LockFailedException::class.java) ?: throw e
             } catch (e: GitAPIException) {
-                val cause: Throwable? = getCause(e, LockFailedException::class.java)
-                if (cause == null) {
-                    throw e
-                }
+                val cause: Throwable = getCause(e, LockFailedException::class.java) ?: throw e
             }
         } while (attempts < 30) // try several times up to 15 seconds
 
@@ -187,7 +180,7 @@ class Repo (val repositoryPath: String) {
         try {
             add.call()
         } catch (e: Exception) {
-            e.printStackTrace()
+            logger.error(e) { "Error staging changes" }
         }
 
         // commit changes
@@ -201,7 +194,7 @@ class Repo (val repositoryPath: String) {
         try {
             commit.call()
         } catch (e: Exception) {
-            e.printStackTrace()
+            logger.error(e) { "Error committing changes" }
             return false
         }
         return true
@@ -238,8 +231,8 @@ class Repo (val repositoryPath: String) {
         try {
             val git: Git = getGit()
             return git.status().call().isClean
-        } catch (e: java.lang.Exception) {
-            e.printStackTrace()
+        } catch (e: Exception) {
+            logger.error(e) { "Error checking clean status" }
         }
         return false
     }

@@ -7,45 +7,42 @@ import de.jonasbroeckmann.kzip.Zip
 import de.jonasbroeckmann.kzip.compressFrom
 import de.jonasbroeckmann.kzip.open
 import docscanner.composeapp.generated.resources.Res
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.io.asSource
 import kotlinx.io.buffered
 import kotlinx.io.files.FileSystem
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.readString
-import org.bibletranslationtools.docscanner.data.local.DirectoryProvider
 import org.bibletranslationtools.docscanner.data.models.Project
 import org.bibletranslationtools.docscanner.data.models.getName
+import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
 import java.io.File
 
 object FileUtils {
-    fun copyPdfFileToAppDirectory(
+    fun writeUriToPath(
         context: Context,
-        directoryProvider: DirectoryProvider,
-        pdfUri: Uri,
-        destinationFileName: String,
-        project: Project
+        fileUri: Uri,
+        path: Path
     ) {
-        context.contentResolver.openInputStream(pdfUri)?.use { inputStream ->
-            val projectDir = Path(directoryProvider.projectsDir, project.getName())
-            val outputFile = Path(projectDir, destinationFileName)
+        val logger = KotlinLogging.logger {}
+        context.contentResolver.openInputStream(fileUri)?.use { inputStream ->
+            try {
+                path.parent?.let {
+                    SystemFileSystem.createDirectories(it)
+                }
+            } catch (e: Exception) {
+                logger.error(e) { "Error writing uri to path $path" }
+            }
 
-            SystemFileSystem.createDirectories(projectDir)
-
-            SystemFileSystem.sink(outputFile).buffered().use { sink ->
+            SystemFileSystem.sink(path).buffered().use { sink ->
                 inputStream.asSource().buffered().transferTo(sink)
             }
         }
     }
 
-    fun getFileSize(
-        directoryProvider: DirectoryProvider,
-        fileName: String,
-        project: Project
-    ): String {
-        val projectDir = Path(directoryProvider.projectsDir, project.getName())
-        val file = Path(projectDir, fileName)
-        val fileSizeBytes = SystemFileSystem.metadataOrNull(file)?.size ?: 0
+    fun getFileSize(path: Path): String {
+        val fileSizeBytes = SystemFileSystem.metadataOrNull(path)?.size ?: 0
         val fileSizeKB = fileSizeBytes / 1024
         return if (fileSizeKB > 1024) {
             val fileSizeMB = fileSizeKB / 1024
@@ -79,6 +76,10 @@ object FileUtils {
             "${context.packageName}.provider",
             File(path.toString())
         )
+    }
+
+    fun renamePath(src: Path, dest: Path) {
+        SystemFileSystem.atomicMove(src, dest)
     }
 
     suspend fun loadAsset(name: String): String {

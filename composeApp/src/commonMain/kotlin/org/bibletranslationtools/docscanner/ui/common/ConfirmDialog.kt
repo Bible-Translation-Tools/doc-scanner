@@ -60,15 +60,6 @@ fun ConfirmDialog(
                 ) {
                     Button(
                         onClick = {
-                            onConfirm()
-                            onDismiss()
-                        },
-                        modifier = Modifier.width(128.dp)
-                    ) {
-                        SingleLineText(stringResource(Res.string.yes))
-                    }
-                    Button(
-                        onClick = {
                             onCancel()
                             onDismiss()
                         },
@@ -78,6 +69,16 @@ fun ConfirmDialog(
                         modifier = Modifier.width(128.dp)
                     ) {
                         SingleLineText(stringResource(Res.string.cancel))
+                    }
+
+                    Button(
+                        onClick = {
+                            onConfirm()
+                            onDismiss()
+                        },
+                        modifier = Modifier.width(128.dp)
+                    ) {
+                        SingleLineText(stringResource(Res.string.yes))
                     }
                 }
             }
