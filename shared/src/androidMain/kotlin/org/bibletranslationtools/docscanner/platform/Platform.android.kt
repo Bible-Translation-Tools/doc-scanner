@@ -87,6 +87,8 @@ actual fun rememberDocumentScannerLauncher(
     }
 }
 
+actual fun isDocumentScannerAvailable(): Boolean = true
+
 private fun copyUriToCache(
     context: android.content.Context,
     uri: Uri,

@@ -152,6 +152,11 @@ actual fun rememberDocumentScannerLauncher(
     return remember(directoryProvider) {
         object : DocumentScannerLauncher {
             override fun launch() {
+                // Guarded by isDocumentScannerAvailable() in the UI, but stay defensive.
+                if (!VNDocumentCameraViewController.isSupported()) {
+                    onResult(null)
+                    return
+                }
                 val delegate = DocumentScannerDelegate(directoryProvider, onResult)
                 retainedScannerDelegate = delegate
                 val scanner = VNDocumentCameraViewController()
@@ -161,6 +166,9 @@ actual fun rememberDocumentScannerLauncher(
         }
     }
 }
+
+actual fun isDocumentScannerAvailable(): Boolean =
+    VNDocumentCameraViewController.isSupported()
 
 // ---- PDF -> images (CoreGraphics) ----
 

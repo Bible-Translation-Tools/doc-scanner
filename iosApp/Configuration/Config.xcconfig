@@ -1,4 +1,4 @@
-TEAM_ID=
+TEAM_ID=8758U5C85V
 
 PRODUCT_NAME=DocScanner
 PRODUCT_BUNDLE_IDENTIFIER=org.bibletranslationtools.docscanner$(TEAM_ID)

@@ -29,6 +29,7 @@ import docscanner.composeapp.generated.resources.document_scanner
 import docscanner.composeapp.generated.resources.login_needed
 import docscanner.composeapp.generated.resources.no_scan_found
 import docscanner.composeapp.generated.resources.scan
+import docscanner.composeapp.generated.resources.scanner_not_available
 import kotlinx.coroutines.launch
 import org.bibletranslationtools.docscanner.api.HtrUser
 import org.bibletranslationtools.docscanner.data.models.Image
@@ -36,6 +37,7 @@ import org.bibletranslationtools.docscanner.data.models.Pdf
 import org.bibletranslationtools.docscanner.data.models.Project
 import org.bibletranslationtools.docscanner.data.models.getTitle
 import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
+import org.bibletranslationtools.docscanner.platform.isDocumentScannerAvailable
 import org.bibletranslationtools.docscanner.platform.rememberDocumentScannerLauncher
 import org.bibletranslationtools.docscanner.platform.rememberFileSharer
 import org.bibletranslationtools.docscanner.ui.common.AlertDialog
@@ -111,7 +113,15 @@ data class ProjectScreen(
                 ExtendedFloatingActionButton(
                     modifier = Modifier.offset(0.dp, 0.dp),
                     onClick = {
-                        scannerLauncher.launch()
+                        if (isDocumentScannerAvailable()) {
+                            scannerLauncher.launch()
+                        } else {
+                            uiScope.launch {
+                                snackbarHostState.showSnackbar(
+                                    getString(Res.string.scanner_not_available)
+                                )
+                            }
+                        }
                     },
                     text = {
                         Text(

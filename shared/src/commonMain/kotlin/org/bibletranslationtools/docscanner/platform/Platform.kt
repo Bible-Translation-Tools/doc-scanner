@@ -21,6 +21,13 @@ expect fun rememberDocumentScannerLauncher(
 ): DocumentScannerLauncher
 
 /**
+ * Whether the native document scanner can run on this device.
+ * iOS: false on macOS ("Designed for iPad") and the Simulator (no camera).
+ * Android: always true.
+ */
+expect fun isDocumentScannerAvailable(): Boolean
+
+/**
  * Renders each page of the PDF at [pdfPath] to a JPEG temp file
  * (created via [directoryProvider]) and returns the resulting images.
  */
