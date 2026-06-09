@@ -1,8 +1,5 @@
 package org.bibletranslationtools.docscanner.ui.viewmodel
 
-import android.accounts.NetworkErrorException
-import android.content.Context
-import android.net.Uri
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import docscanner.composeapp.generated.resources.Res
@@ -14,7 +11,6 @@ import docscanner.composeapp.generated.resources.logged_out
 import docscanner.composeapp.generated.resources.logging_in
 import docscanner.composeapp.generated.resources.logging_out
 import docscanner.composeapp.generated.resources.login_failed
-import docscanner.composeapp.generated.resources.login_needed
 import docscanner.composeapp.generated.resources.share_project_failed
 import docscanner.composeapp.generated.resources.sharing_project
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -65,8 +61,8 @@ sealed class HomeEvent {
     data object Idle : HomeEvent()
     data class CreateProject(val project: Project): HomeEvent()
     data class DeleteProject(val project: Project): HomeEvent()
-    data class ShareProject(val project: Project, val context: Context): HomeEvent()
-    data class ProjectShared(val uri: Uri): HomeEvent()
+    data class ShareProject(val project: Project): HomeEvent()
+    data class ProjectShared(val path: Path): HomeEvent()
     data class Login(val username: String, val password: String) : HomeEvent()
     data object Logout : HomeEvent()
 }
@@ -96,7 +92,7 @@ class HomeViewModel(
     private val logger = KotlinLogging.logger {}
 
     private fun initialize() {
-        screenModelScope.launch(Dispatchers.IO) {
+        screenModelScope.launch(Dispatchers.Default) {
             updateProgress(Progress(-1f, getString(Res.string.loading_projects)))
 
             updateUser(transcriberApi.getUser())
@@ -119,7 +115,7 @@ class HomeViewModel(
         when (event) {
             is HomeEvent.CreateProject -> createProject(event.project)
             is HomeEvent.DeleteProject -> deleteProject(event.project)
-            is HomeEvent.ShareProject -> shareProject(event.project, event.context)
+            is HomeEvent.ShareProject -> shareProject(event.project)
             is HomeEvent.Login -> login(event.username, event.password)
             is HomeEvent.Logout -> logout()
             else -> resetChannel()
@@ -127,7 +123,7 @@ class HomeViewModel(
     }
 
     private fun createProject(project: Project) {
-        screenModelScope.launch(Dispatchers.IO) {
+        screenModelScope.launch(Dispatchers.Default) {
             updateProgress(Progress(-1f, getString(Res.string.creating_project)))
 
             projectRepository.insert(project)
@@ -138,14 +134,13 @@ class HomeViewModel(
         }
     }
 
-    private fun shareProject(project: Project, context: Context) {
-        screenModelScope.launch(Dispatchers.IO) {
+    private fun shareProject(project: Project) {
+        screenModelScope.launch(Dispatchers.Default) {
             updateProgress(Progress(-1f, getString(Res.string.sharing_project)))
 
             try {
                 val zip = FileUtils.zipProject(project, directoryProvider)
-                val fileUri = FileUtils.getPathUri(context, zip)
-                _event.send(HomeEvent.ProjectShared(fileUri))
+                _event.send(HomeEvent.ProjectShared(zip))
             } catch (e: Exception) {
                 val error = getString(Res.string.share_project_failed)
                 logger.error(e) { error }
@@ -189,7 +184,7 @@ class HomeViewModel(
                 Path(directoryProvider.projectsDir, project.getName())
             )
             true
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
 
@@ -199,7 +194,7 @@ class HomeViewModel(
     }
 
     private fun login(username: String, password: String) {
-        screenModelScope.launch(Dispatchers.IO) {
+        screenModelScope.launch(Dispatchers.Default) {
             updateProgress(Progress(-1f, getString(Res.string.logging_in)))
 
             val loginError = getString(Res.string.login_failed)
@@ -209,7 +204,7 @@ class HomeViewModel(
                 result.user?.let { user ->
                     updateUser(user)
                     // doRegisterSshKeys()
-                } ?: throw NetworkErrorException("User is null")
+                } ?: throw IllegalStateException("User is null")
             } catch (e: Exception) {
                 logger.error(e) { loginError }
                 updateAlert(
@@ -221,18 +216,8 @@ class HomeViewModel(
         }
     }
 
-    private fun requestLogin() {
-        screenModelScope.launch {
-            updateAlert(
-                Alert(getString(Res.string.login_needed)) {
-                    updateAlert(null)
-                }
-            )
-        }
-    }
-
     private fun logout() {
-        screenModelScope.launch(Dispatchers.IO) {
+        screenModelScope.launch(Dispatchers.Default) {
             updateProgress(Progress(-1f, getString(Res.string.logging_out)))
 
             _state.value.user?.let {

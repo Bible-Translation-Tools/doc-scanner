@@ -12,8 +12,10 @@ import org.bibletranslationtools.docscanner.data.repository.LevelRepository
 import org.bibletranslationtools.docscanner.data.repository.LevelRepositoryImpl
 import org.bibletranslationtools.docscanner.data.repository.PdfRepository
 import org.bibletranslationtools.docscanner.data.repository.PdfRepositoryImpl
+import org.bibletranslationtools.docscanner.data.repository.PreferenceRepository
 import org.bibletranslationtools.docscanner.data.repository.ProjectRepository
 import org.bibletranslationtools.docscanner.data.repository.ProjectRepositoryImpl
+import org.bibletranslationtools.docscanner.data.repository.SettingsPreferenceRepository
 import org.bibletranslationtools.docscanner.ui.viewmodel.HomeViewModel
 import org.bibletranslationtools.docscanner.ui.viewmodel.ProjectViewModel
 import org.bibletranslationtools.docscanner.ui.viewmodel.SplashViewModel
@@ -28,6 +30,8 @@ expect val platformModule: Module
 val sharedModule = module {
     single { MainDatabase(get()) }
     singleOf(::TranscriberApi)
+
+    singleOf(::SettingsPreferenceRepository).bind<PreferenceRepository>()
 
     // Database repositories
     singleOf(::ProjectRepositoryImpl).bind<ProjectRepository>()

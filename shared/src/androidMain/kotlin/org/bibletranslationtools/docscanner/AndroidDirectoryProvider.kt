@@ -9,9 +9,6 @@ import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
 import org.bibletranslationtools.docscanner.utils.deleteRecursively
 
 class AndroidDirectoryProvider (private val context: Context) : DirectoryProvider {
-    companion object {
-        const val TAG = "DirectoryProvider"
-    }
 
     private val logger = KotlinLogging.logger {}
 

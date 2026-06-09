@@ -11,7 +11,7 @@ data class Pdf(
     val created: String,
     val modified: String,
     val projectId: Long
-) : java.io.Serializable
+)
 
 fun Pdf.toEntity() = PdfEntity(
     id = id,

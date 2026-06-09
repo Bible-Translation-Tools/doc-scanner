@@ -1,8 +1,5 @@
 package org.bibletranslationtools.docscanner.ui.screens.home
 
-import android.content.Intent
-import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -23,7 +20,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
@@ -41,6 +37,8 @@ import org.bibletranslationtools.docscanner.ui.common.ErrorScreen
 import org.bibletranslationtools.docscanner.ui.common.ExtraAction
 import org.bibletranslationtools.docscanner.ui.common.PageType
 import org.bibletranslationtools.docscanner.ui.common.ProgressDialog
+import org.bibletranslationtools.docscanner.platform.ExitOnBackHandler
+import org.bibletranslationtools.docscanner.platform.rememberFileSharer
 import org.bibletranslationtools.docscanner.ui.common.TopNavigationBar
 import org.bibletranslationtools.docscanner.ui.screens.home.components.CreateProjectDialog
 import org.bibletranslationtools.docscanner.ui.screens.home.components.LoginDialog
@@ -49,7 +47,6 @@ import org.bibletranslationtools.docscanner.ui.screens.project.ProjectScreen
 import org.bibletranslationtools.docscanner.ui.viewmodel.HomeEvent
 import org.bibletranslationtools.docscanner.ui.viewmodel.HomeViewModel
 import org.jetbrains.compose.resources.stringResource
-import kotlin.system.exitProcess
 
 class HomeScreen : Screen {
     @Composable
@@ -64,30 +61,19 @@ class HomeScreen : Screen {
         var showCreateProjectDialog by remember { mutableStateOf(false) }
         var showLoginDialog by remember { mutableStateOf(false) }
 
-        val activity = LocalActivity.current
-        val context = LocalContext.current
+        val fileSharer = rememberFileSharer()
 
         LaunchedEffect(event) {
             when (event) {
                 is HomeEvent.ProjectShared -> {
-                    val fileUri = (event as HomeEvent.ProjectShared).uri
-                    val shareIntent = Intent(Intent.ACTION_SEND)
-                    shareIntent.type = "application/zip"
-                    shareIntent.putExtra(Intent.EXTRA_STREAM, fileUri)
-                    shareIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    context.startActivity(
-                        Intent.createChooser(shareIntent, "share")
-                    )
+                    fileSharer.share((event as HomeEvent.ProjectShared).path)
                     viewModel.onEvent(HomeEvent.Idle)
                 }
                 else -> {}
             }
         }
 
-        BackHandler {
-            activity?.finishAffinity()
-            exitProcess(0)
-        }
+        ExitOnBackHandler()
 
         Scaffold(
             topBar = {
@@ -153,7 +139,7 @@ class HomeScreen : Screen {
                                 } else null
                             },
                             onShareClick = {
-                                viewModel.onEvent(HomeEvent.ShareProject(project, context))
+                                viewModel.onEvent(HomeEvent.ShareProject(project))
                             },
                             onDeleteClick = {
                                 viewModel.onEvent(HomeEvent.DeleteProject(project))

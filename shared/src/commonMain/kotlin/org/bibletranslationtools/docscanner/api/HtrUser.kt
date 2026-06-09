@@ -15,4 +15,4 @@ data class HtrUser(
     val tokenSha1: String,
     val tokenLastEight: String,
     val tokenScopes: List<String>?,
-) : java.io.Serializable
+)

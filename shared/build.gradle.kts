@@ -20,6 +20,16 @@ kotlin {
         }
     }
 
+    listOf(
+        iosArm64(),
+        iosSimulatorArm64()
+    ).forEach { iosTarget ->
+        iosTarget.binaries.framework {
+            baseName = "Shared"
+            isStatic = true
+        }
+    }
+
     sourceSets {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
@@ -34,7 +44,12 @@ kotlin {
             implementation(libs.mlKit.documentScanner)
             implementation(libs.okhttp)
         }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
+            implementation(libs.sqldelight.native.driver)
+        }
         commonMain.dependencies {
+            implementation(libs.multiplatform.settings)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
@@ -44,7 +59,6 @@ kotlin {
             implementation(libs.compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
-            implementation(libs.searchableDropdown)
 
             api(libs.koin.core)
             implementation(libs.koin.compose)
