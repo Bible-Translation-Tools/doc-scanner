@@ -2,6 +2,7 @@ package org.bibletranslationtools.docscanner.data.models
 
 import kotlinx.serialization.Serializable
 import org.bibletranslationtools.database.PdfEntity
+import org.bibletranslationtools.docscanner.platform.CommonSerializable
 
 @Serializable
 data class Pdf(
@@ -11,7 +12,7 @@ data class Pdf(
     val created: String,
     val modified: String,
     val projectId: Long
-)
+) : CommonSerializable
 
 fun Pdf.toEntity() = PdfEntity(
     id = id,

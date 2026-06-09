@@ -207,3 +207,5 @@ actual fun ExitOnBackHandler() {
         kotlin.system.exitProcess(0)
     }
 }
+
+actual typealias CommonSerializable = java.io.Serializable

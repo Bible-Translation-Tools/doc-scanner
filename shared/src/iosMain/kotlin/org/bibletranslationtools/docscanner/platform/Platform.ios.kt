@@ -277,3 +277,6 @@ actual fun zipDirectory(sourceDir: Path, zipFile: Path) {
 actual fun ExitOnBackHandler() {
     // iOS manages app lifecycle; nothing to do.
 }
+
+actual interface CommonSerializable
+

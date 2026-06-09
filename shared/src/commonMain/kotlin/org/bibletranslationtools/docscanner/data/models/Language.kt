@@ -3,6 +3,7 @@ package org.bibletranslationtools.docscanner.data.models
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.bibletranslationtools.database.LanguageEntity
+import org.bibletranslationtools.docscanner.platform.CommonSerializable
 
 @Serializable
 data class Language(
@@ -16,7 +17,7 @@ data class Language(
     @SerialName("ld")
     val direction: String,
     val gw: Boolean
-) {
+) : CommonSerializable {
 
     override fun toString(): String {
         val language = if (name != angName) {

@@ -148,40 +148,40 @@ data class ProjectScreen(
                         .fillMaxSize()
                         .padding(paddingValue)
                 ) {
-                    items(items = state.pdfs, key = { it.id }) { pdf ->
-                        PdfLayout(
-                            pdf = pdf,
-                            menuShown = expandedItemId == pdf.id,
-                            onCardClick = {
-                                viewModel.onEvent(ProjectEvent.OpenPdf(pdf))
-                            },
-                            onMoreClick = {
-                                expandedItemId = if (expandedItemId != pdf.id) {
-                                    pdf.id
-                                } else null
-                            },
-                            onRenameClick = {
-                                renamePdf = pdf
-                            },
-                            onUploadClick = {
-                                if (user != null) {
-                                    viewModel.onEvent(ProjectEvent.ExtractImages(pdf))
-                                } else {
-                                    uiScope.launch {
-                                        snackbarHostState.showSnackbar(
-                                            getString(Res.string.login_needed)
-                                        )
+                        items(items = state.pdfs, key = { it.id }) { pdf ->
+                            PdfLayout(
+                                pdf = pdf,
+                                menuShown = expandedItemId == pdf.id,
+                                onCardClick = {
+                                    viewModel.onEvent(ProjectEvent.OpenPdf(pdf))
+                                },
+                                onMoreClick = {
+                                    expandedItemId = if (expandedItemId != pdf.id) {
+                                        pdf.id
+                                    } else null
+                                },
+                                onRenameClick = {
+                                    renamePdf = pdf
+                                },
+                                onUploadClick = {
+                                    if (user != null) {
+                                        viewModel.onEvent(ProjectEvent.ExtractImages(pdf))
+                                    } else {
+                                        uiScope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                getString(Res.string.login_needed)
+                                            )
+                                        }
                                     }
-                                }
-                            },
-                            onDeleteClick = {
-                                viewModel.onEvent(ProjectEvent.DeletePdf(pdf))
-                            },
-                            onDismissRequest = { expandedItemId = null }
-                        )
+                                },
+                                onDeleteClick = {
+                                    viewModel.onEvent(ProjectEvent.DeletePdf(pdf))
+                                },
+                                onDismissRequest = { expandedItemId = null }
+                            )
+                        }
                     }
                 }
-            }
 
             state.progress?.let {
                 ProgressDialog(it)

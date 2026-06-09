@@ -3,6 +3,7 @@ package org.bibletranslationtools.docscanner.data.models
 import kotlinx.serialization.Serializable
 import org.bibletranslationtools.database.ProjectEntity
 import org.bibletranslationtools.database.ProjectWithData
+import org.bibletranslationtools.docscanner.platform.CommonSerializable
 
 @Serializable
 data class Project(
@@ -12,7 +13,7 @@ data class Project(
     val level: Level,
     val created: String,
     val modified: String
-)
+) : CommonSerializable
 
 fun Project.getName(): String {
     return "${language.slug}_${book.slug}_${level.slug}"

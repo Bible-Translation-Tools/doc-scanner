@@ -14,6 +14,8 @@ interface DocumentScannerLauncher {
     fun launch()
 }
 
+expect interface CommonSerializable
+
 @Composable
 expect fun rememberDocumentScannerLauncher(
     directoryProvider: DirectoryProvider,

@@ -1,6 +1,7 @@
 package org.bibletranslationtools.docscanner.api
 
 import kotlinx.serialization.Serializable
+import org.bibletranslationtools.docscanner.platform.CommonSerializable
 
 @Serializable
 data class HtrUser(
@@ -15,4 +16,4 @@ data class HtrUser(
     val tokenSha1: String,
     val tokenLastEight: String,
     val tokenScopes: List<String>?,
-)
+) : CommonSerializable
