@@ -3,7 +3,6 @@ package org.bibletranslationtools.docscanner.api
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.android.Android
 import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.UserAgent
@@ -81,7 +80,7 @@ class TranscriberApi(preferenceRepository: PreferenceRepository) {
     private val cookieStorage = PersistentCookieStorage(preferenceRepository)
     private val logger = KotlinLogging.logger {}
 
-    private val client = HttpClient(Android) {
+    private val client = HttpClient {
         install(HttpCookies) {
             storage = cookieStorage
         }

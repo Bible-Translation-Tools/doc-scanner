@@ -1,14 +1,6 @@
 package org.bibletranslationtools.docscanner.utils
 
-import android.content.Context
-import android.net.Uri
-import androidx.core.content.FileProvider
-import de.jonasbroeckmann.kzip.Zip
-import de.jonasbroeckmann.kzip.compressFrom
-import de.jonasbroeckmann.kzip.open
 import docscanner.composeapp.generated.resources.Res
-import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.io.asSource
 import kotlinx.io.buffered
 import kotlinx.io.files.FileSystem
 import kotlinx.io.files.Path
@@ -17,30 +9,9 @@ import kotlinx.io.readString
 import org.bibletranslationtools.docscanner.data.models.Project
 import org.bibletranslationtools.docscanner.data.models.getName
 import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
-import java.io.File
+import org.bibletranslationtools.docscanner.platform.zipDirectory
 
 object FileUtils {
-    fun writeUriToPath(
-        context: Context,
-        fileUri: Uri,
-        path: Path
-    ) {
-        val logger = KotlinLogging.logger {}
-        context.contentResolver.openInputStream(fileUri)?.use { inputStream ->
-            try {
-                path.parent?.let {
-                    SystemFileSystem.createDirectories(it)
-                }
-            } catch (e: Exception) {
-                logger.error(e) { "Error writing uri to path $path" }
-            }
-
-            SystemFileSystem.sink(path).buffered().use { sink ->
-                inputStream.asSource().buffered().transferTo(sink)
-            }
-        }
-    }
-
     fun getFileSize(path: Path): String {
         val fileSizeBytes = SystemFileSystem.metadataOrNull(path)?.size ?: 0
         val fileSizeKB = fileSizeBytes / 1024
@@ -52,39 +23,13 @@ object FileUtils {
         }
     }
 
-    fun getPdfUri(
-        context: Context,
-        directoryProvider: DirectoryProvider,
-        fileName: String,
-        project: Project
-    ): Uri {
-        val projectDir = Path(directoryProvider.projectsDir, project.getName())
-        val file = Path(projectDir, fileName)
-        return FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.provider",
-            File(file.toString())
-        )
-    }
-
-    fun getPathUri(
-        context: Context,
-        path: Path
-    ): Uri {
-        return FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.provider",
-            File(path.toString())
-        )
-    }
-
     fun renamePath(src: Path, dest: Path) {
         SystemFileSystem.atomicMove(src, dest)
     }
 
     suspend fun loadAsset(name: String): String {
         val readBytes = Res.readBytes("files/$name")
-        return String(readBytes)
+        return readBytes.decodeToString()
     }
 
     fun zipProject(
@@ -94,13 +39,7 @@ object FileUtils {
         val projectDir = Path(directoryProvider.projectsDir, project.getName())
         val zipFile = Path(directoryProvider.sharedDir, "${project.getName()}.zip")
 
-        Zip.open(
-            path = zipFile,
-            mode = Zip.Mode.Write,
-            level = Zip.CompressionLevel.BetterCompression
-        ).use { zip ->
-            zip.compressFrom(projectDir)
-        }
+        zipDirectory(projectDir, zipFile)
 
         return zipFile
     }

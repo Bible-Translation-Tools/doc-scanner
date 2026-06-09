@@ -1,11 +1,5 @@
 package org.bibletranslationtools.docscanner.ui.viewmodel
 
-import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.pdf.PdfRenderer
-import android.net.Uri
-import android.os.ParcelFileDescriptor
-import androidx.core.graphics.createBitmap
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import docscanner.composeapp.generated.resources.Res
@@ -34,7 +28,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import kotlinx.io.asOutputStream
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -50,11 +43,11 @@ import org.bibletranslationtools.docscanner.data.models.Project
 import org.bibletranslationtools.docscanner.data.models.getName
 import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
 import org.bibletranslationtools.docscanner.data.repository.PdfRepository
+import org.bibletranslationtools.docscanner.platform.renderPdfToImages
 import org.bibletranslationtools.docscanner.ui.common.ConfirmAction
 import org.bibletranslationtools.docscanner.ui.screens.project.components.UploadStatus
 import org.bibletranslationtools.docscanner.utils.FileUtils
 import org.jetbrains.compose.resources.getString
-import java.io.File
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.time.Clock
@@ -72,11 +65,11 @@ data class ProjectState(
 
 sealed class ProjectEvent {
     data object Idle : ProjectEvent()
-    data class CreatePdf(val pdfUri: Uri, val context: Context) : ProjectEvent()
+    data class CreatePdf(val pdfPath: Path) : ProjectEvent()
     data class RenamePdf(val pdf: Pdf, val newName: String) : ProjectEvent()
     data class DeletePdf(val pdf: Pdf) : ProjectEvent()
-    data class OpenPdf(val pdf: Pdf, val context: Context) : ProjectEvent()
-    data class PdfOpened(val uri: Uri) : ProjectEvent()
+    data class OpenPdf(val pdf: Pdf) : ProjectEvent()
+    data class PdfOpened(val path: Path) : ProjectEvent()
     data class UploadImages(val images: List<Image>) : ProjectEvent()
     data class ExtractImages(val pdf: Pdf): ProjectEvent()
     data class ImagesExtracted(val images: List<Image>): ProjectEvent()
@@ -105,10 +98,10 @@ class ProjectViewModel(
 
     fun onEvent(event: ProjectEvent) {
         when (event) {
-            is ProjectEvent.CreatePdf -> createPdf(event.pdfUri, event.context)
+            is ProjectEvent.CreatePdf -> createPdf(event.pdfPath)
             is ProjectEvent.RenamePdf -> renamePdf(event.pdf, event.newName)
             is ProjectEvent.DeletePdf -> deletePdf(event.pdf)
-            is ProjectEvent.OpenPdf -> openPdf(event.pdf, event.context)
+            is ProjectEvent.OpenPdf -> openPdf(event.pdf)
             is ProjectEvent.UploadImages -> uploadImages(event.images)
             is ProjectEvent.ExtractImages -> extractImages(event.pdf)
             else -> resetChannel()
@@ -116,7 +109,7 @@ class ProjectViewModel(
     }
 
     private fun initialize() {
-        screenModelScope.launch(Dispatchers.IO) {
+        screenModelScope.launch(Dispatchers.Default) {
             updateProgress(Progress(-1f, getString(Res.string.loading_pdfs)))
 
             updateUser(transcriberApi.getUser())
@@ -130,8 +123,8 @@ class ProjectViewModel(
         updatePdfs(pdfRepository.getAll(project))
     }
 
-    private fun createPdf(pdfUri: Uri, context: Context) {
-        screenModelScope.launch(Dispatchers.IO) {
+    private fun createPdf(pdfPath: Path) {
+        screenModelScope.launch(Dispatchers.Default) {
             updateProgress(Progress(-1f, getString(Res.string.creating_pdf)))
 
             val lastPdfId = pdfRepository.lastId()
@@ -142,9 +135,16 @@ class ProjectViewModel(
             val pdfName = "${project.getName()}_$newPdfId"
             val pdfFileName = "$pdfName.pdf"
             val projectDir = Path(directoryProvider.projectsDir, project.getName())
+            SystemFileSystem.createDirectories(projectDir)
             val pdfFile = Path(projectDir, pdfFileName)
 
-            FileUtils.writeUriToPath(context, pdfUri, pdfFile)
+            // Move the freshly scanned temp PDF into the project directory
+            SystemFileSystem.source(pdfPath).buffered().use { source ->
+                SystemFileSystem.sink(pdfFile).buffered().use { sink ->
+                    source.transferTo(sink)
+                }
+            }
+            SystemFileSystem.delete(pdfPath, mustExist = false)
 
             val pdf = Pdf(
                 name = pdfFileName,
@@ -171,18 +171,13 @@ class ProjectViewModel(
         }
     }
 
-    private fun openPdf(
-        pdf: Pdf,
-        context: Context,
-    ) {
+    private fun openPdf(pdf: Pdf) {
         screenModelScope.launch {
-            val uri = FileUtils.getPdfUri(
-                context,
-                directoryProvider,
-                pdf.name,
-                project
+            val path = Path(
+                Path(directoryProvider.projectsDir, project.getName()),
+                pdf.name
             )
-            _event.send(ProjectEvent.PdfOpened(uri))
+            _event.send(ProjectEvent.PdfOpened(path))
         }
     }
 
@@ -201,7 +196,7 @@ class ProjectViewModel(
                     val path = Path(image.path)
                     SystemFileSystem.source(path).buffered().use { source ->
                         val bytes = source.readByteArray()
-                        val base64 = "data:image/jpeg;base64,${Base64.Default.encode(bytes)}"
+                        val base64 = "data:image/jpeg;base64,${Base64.encode(bytes)}"
                         val imageId = Uuid.random().toString()
                         val timestampPattern = "\\d+".toRegex()
                         val created = timestampPattern
@@ -304,7 +299,7 @@ class ProjectViewModel(
     }
 
     private fun renamePdf(pdf: Pdf, newName: String) {
-        screenModelScope.launch(Dispatchers.IO) {
+        screenModelScope.launch(Dispatchers.Default) {
             val newNameNormalized = if (!newName.endsWith(".pdf")) {
                 "$newName.pdf"
             } else {
@@ -346,47 +341,13 @@ class ProjectViewModel(
     }
 
     private fun extractImages(pdf: Pdf) {
-        screenModelScope.launch(Dispatchers.IO) {
+        screenModelScope.launch(Dispatchers.Default) {
             updateProgress(Progress(-1f, getString(Res.string.preparing_images)))
 
             val projectDir = Path(directoryProvider.projectsDir, project.getName())
             val pdfPath = Path(projectDir, pdf.name)
-            val pdfFile = File(pdfPath.toString())
 
-            val images = mutableListOf<Image>()
-
-            ParcelFileDescriptor.open(
-                pdfFile,
-                ParcelFileDescriptor.MODE_READ_ONLY
-            ).use { descriptor ->
-                PdfRenderer(descriptor).use { renderer ->
-                    for (index in 0 until renderer.pageCount) {
-                        renderer.openPage(index).use { page ->
-                            val bitmap = createBitmap(page.width, page.height)
-                            page.render(
-                                bitmap,
-                                null,
-                                null,
-                                PdfRenderer.Page.RENDER_MODE_FOR_PRINT
-                            )
-
-                            val imageFile = directoryProvider.createTempFile(
-                                "image",
-                                ".jpg"
-                            )
-                            SystemFileSystem.sink(imageFile).buffered().use {
-                                it.asOutputStream().use { out ->
-                                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
-                                }
-                            }
-                            images.add(
-                                Image(path = imageFile.toString(), chapter = 1)
-                            )
-                            bitmap.recycle()
-                        }
-                    }
-                }
-            }
+            val images = renderPdfToImages(pdfPath, directoryProvider)
 
             updateProgress(null)
 
@@ -395,7 +356,7 @@ class ProjectViewModel(
     }
 
     private fun updatePdf(pdf: Pdf) {
-        screenModelScope.launch(Dispatchers.IO) {
+        screenModelScope.launch(Dispatchers.Default) {
             pdfRepository.update(pdf)
         }
     }

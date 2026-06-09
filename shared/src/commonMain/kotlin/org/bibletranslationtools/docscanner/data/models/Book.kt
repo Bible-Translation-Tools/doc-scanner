@@ -13,7 +13,7 @@ data class Book(
     val anthology: String,
     @SerialName("num")
     val sort: Long
-) : java.io.Serializable {
+) {
     override fun toString(): String {
         return "[$slug] $name"
     }

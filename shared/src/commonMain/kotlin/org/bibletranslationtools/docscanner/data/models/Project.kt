@@ -12,7 +12,7 @@ data class Project(
     val level: Level,
     val created: String,
     val modified: String
-) : java.io.Serializable
+)
 
 fun Project.getName(): String {
     return "${language.slug}_${book.slug}_${level.slug}"

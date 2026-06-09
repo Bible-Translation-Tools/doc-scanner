@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.kanyidev.searchable_dropdown.LargeSearchableDropdownMenu
 import docscanner.composeapp.generated.resources.Res
 import docscanner.composeapp.generated.resources.cancel
 import docscanner.composeapp.generated.resources.create_project
@@ -35,6 +34,7 @@ import org.bibletranslationtools.docscanner.data.models.Book
 import org.bibletranslationtools.docscanner.data.models.Language
 import org.bibletranslationtools.docscanner.data.models.Level
 import org.bibletranslationtools.docscanner.data.models.Project
+import org.bibletranslationtools.docscanner.ui.common.SearchableDropdown
 import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Clock
 
@@ -53,8 +53,7 @@ fun CreateProjectDialog(
     Dialog(
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = false
+            usePlatformDefaultWidth = false
         )
     ) {
         Surface(
@@ -70,33 +69,30 @@ fun CreateProjectDialog(
                     style = MaterialTheme.typography.headlineSmall
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                LargeSearchableDropdownMenu(
+                SearchableDropdown(
                     options = languages,
                     selectedOption = language,
                     onItemSelected = { language = it },
                     placeholder = stringResource(Res.string.select_language),
                     textStyle = MaterialTheme.typography.bodyMedium,
-                    fieldLabelTextStyle = MaterialTheme.typography.bodyMedium,
                     placeholderTextStyle = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                LargeSearchableDropdownMenu(
+                SearchableDropdown(
                     options = books,
                     selectedOption = book,
                     onItemSelected = { book = it },
                     placeholder = stringResource(Res.string.select_book),
                     textStyle = MaterialTheme.typography.bodyMedium,
-                    fieldLabelTextStyle = MaterialTheme.typography.bodyMedium,
                     placeholderTextStyle = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                LargeSearchableDropdownMenu(
+                SearchableDropdown(
                     options = levels,
                     selectedOption = level,
                     onItemSelected = { level = it },
                     placeholder = stringResource(Res.string.select_level),
                     textStyle = MaterialTheme.typography.bodyMedium,
-                    fieldLabelTextStyle = MaterialTheme.typography.bodyMedium,
                     placeholderTextStyle = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(8.dp))

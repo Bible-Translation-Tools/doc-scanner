@@ -67,7 +67,7 @@ class SplashViewModel(
     private val logger = KotlinLogging.logger {}
 
     private fun initializeApp() {
-        screenModelScope.launch(Dispatchers.IO) {
+        screenModelScope.launch(Dispatchers.Default) {
             val initialized = preferenceRepository.getPref(
                 Settings.KEY_PREF_INITIALIZED,
                 false
