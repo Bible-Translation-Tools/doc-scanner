@@ -95,3 +95,39 @@ kotlin {
 compose.resources {
     packageOfResClass = "docscanner.composeapp.generated.resources"
 }
+
+val updateIosVersion by tasks.registering {
+    description = """
+        Sync the iOS Config.xcconfig version from libs.versions.toml so the app
+        version stays aligned with Android. MARKETING_VERSION / CURRENT_PROJECT_VERSION
+        drive Xcode's General > Identity, the build settings and Info.plist. Runs as
+        part of any iOS framework build (Android Studio Gradle build or Xcode's
+        embedAndSign phase).
+    """.trimIndent()
+    val versionName = libs.versions.app.versionName.get()
+    val versionCode = libs.versions.app.versionCode.get()
+    val xcconfigFile = rootProject.file("iosApp/Configuration/Config.xcconfig")
+    inputs.property("versionName", versionName)
+    inputs.property("versionCode", versionCode)
+    outputs.file(xcconfigFile)
+    doLast {
+        var text = xcconfigFile.readText()
+        text = text.replace(
+            Regex("(?m)^MARKETING_VERSION=.*$"),
+            "MARKETING_VERSION=$versionName"
+        )
+        text = text.replace(
+            Regex("(?m)^CURRENT_PROJECT_VERSION=.*$"),
+            "CURRENT_PROJECT_VERSION=$versionCode"
+        )
+        xcconfigFile.writeText(text)
+        logger.lifecycle("Set iOS version $versionName ($versionCode) in $xcconfigFile")
+    }
+}
+
+tasks.matching {
+    it.name.startsWith("link") && it.name.contains("Framework") ||
+        it.name.startsWith("embedAndSign")
+}.configureEach {
+    dependsOn(updateIosVersion)
+}

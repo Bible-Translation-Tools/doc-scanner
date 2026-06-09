@@ -3,5 +3,9 @@ TEAM_ID=
 PRODUCT_NAME=DocScanner
 PRODUCT_BUNDLE_IDENTIFIER=org.bibletranslationtools.docscanner$(TEAM_ID)
 
-CURRENT_PROJECT_VERSION=1
-MARKETING_VERSION=1.0
+CURRENT_PROJECT_VERSION=12
+MARKETING_VERSION=0.5.2
+
+// Shared KMP framework only targets iosSimulatorArm64 (no x86_64 sim slice),
+// so exclude x86_64 for the simulator -> "Any iOS Simulator Device (arm64)".
+EXCLUDED_ARCHS[sdk=iphonesimulator*]=x86_64
