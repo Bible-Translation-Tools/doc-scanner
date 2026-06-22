@@ -52,8 +52,9 @@ jobs:
 
       - name: Rename Signed Artifacts
         run: |
-          mv androidApp/build/outputs/release-artifacts/*-signed.apk ./doc-scanner-${{ github.ref_name }}.apk
-          mv androidApp/build/outputs/release-artifacts/*-signed.aab ./doc-scanner-${{ github.ref_name }}.aab
+          rm -f androidApp/build/outputs/release-artifacts/*-unsigned.apk
+          mv androidApp/build/outputs/release-artifacts/*.apk ./doc-scanner-${{ github.ref_name }}.apk
+          mv androidApp/build/outputs/release-artifacts/*.aab ./doc-scanner-${{ github.ref_name }}.aab
 
       - name: Upload APK to Release
         uses: svenstaro/upload-release-action@v2
