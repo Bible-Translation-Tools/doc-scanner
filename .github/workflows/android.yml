@@ -24,14 +24,16 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+        
       - name: Test with Gradle
         run: ./gradlew test
-      - name: Assemble Release
-        run: ./gradlew assembleRelease --stacktrace
 
-      - name: Sign APK with keystore
+      - name: Build Release (APK & AAB)
+        run: ./gradlew :androidApp:assembleRelease :androidApp:bundleRelease --stacktrace
+
+      - name: Sign APK
         uses: r0adkll/sign-android-release@v1
-        id: sign_app
+        id: sign_apk
         with:
           releaseDirectory: androidApp/build/outputs/apk/release
           signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -41,11 +43,33 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: "37.0.0"
 
-      - name: Upload binary to release
+      - name: Sign App Bundle (AAB)
+        uses: r0adkll/sign-android-release@v1
+        id: sign_aab
+        with:
+          releaseDirectory: androidApp/build/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          alias: ${{ secrets.ALIAS_NAME }}
+          keyStorePassword: ${{ secrets.KEYSTORE_PASS }}
+          keyPassword: ${{ secrets.ALIAS_PASS }}
+        env:
+          BUILD_TOOLS_VERSION: "37.0.0"
+
+      - name: Upload APK to Release
         uses: svenstaro/upload-release-action@v2
         with:
-          file: ${{ steps.sign_app.outputs.signedReleaseFile }}
+          file: ${{ steps.sign_apk.outputs.signedReleaseFile }}
           asset_name: doc-scanner-${{ github.ref_name }}.apk
+          overwrite: true
+          prerelease: true
+          draft: true
+          body: "Release ${{ github.ref_name }}"
+
+      - name: Upload App Bundle (AAB) to Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          file: ${{ steps.sign_aab.outputs.signedReleaseFile }}
+          asset_name: doc-scanner-${{ github.ref_name }}.aab
           overwrite: true
           prerelease: true
           draft: true
