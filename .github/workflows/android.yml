@@ -69,22 +69,18 @@ jobs:
           cp "$APK_PATH" ./doc-scanner-${{ github.ref_name }}.apk
           cp "$AAB_PATH" ./doc-scanner-${{ github.ref_name }}.aab
 
-      - name: Upload APK to Release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          file: ./doc-scanner-${{ github.ref_name }}.apk
-          asset_name: doc-scanner-${{ github.ref_name }}.apk
-          overwrite: true
-          prerelease: true
-          draft: true
-          body: "Release ${{ github.ref_name }}"
-
-      - name: Upload App Bundle (AAB) to Release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          file: ./doc-scanner-${{ github.ref_name }}.aab
-          asset_name: doc-scanner-${{ github.ref_name }}.aab
-          overwrite: true
-          prerelease: true
-          draft: true
-          body: "Release ${{ github.ref_name }}"
+      - name: Create Release and Upload Artifacts
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            ./doc-scanner-${{ github.ref_name }}.apk \
+            ./doc-scanner-${{ github.ref_name }}.aab \
+            --draft \
+            --prerelease \
+            --title "Release ${{ github.ref_name }}" \
+            --notes "Release ${{ github.ref_name }}" \
+            || gh release upload "${{ github.ref_name }}" \
+            ./doc-scanner-${{ github.ref_name }}.apk \
+            ./doc-scanner-${{ github.ref_name }}.aab \
+            --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
