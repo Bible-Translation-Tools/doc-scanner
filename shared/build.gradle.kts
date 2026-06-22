@@ -96,7 +96,7 @@ compose.resources {
     packageOfResClass = "docscanner.composeapp.generated.resources"
 }
 
-val updateIosVersion by tasks.registering {
+val updateIosVersion = tasks.register("updateIosVersion") {
     description = """
         Sync the iOS Config.xcconfig version from libs.versions.toml so the app
         version stays aligned with Android. MARKETING_VERSION / CURRENT_PROJECT_VERSION

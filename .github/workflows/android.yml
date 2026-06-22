@@ -1,3 +1,4 @@
+---
 name: Android Release
 
 on:
@@ -24,18 +25,24 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-        
+
       - name: Test with Gradle
         run: ./gradlew test
 
       - name: Build Release (APK & AAB)
         run: ./gradlew :androidApp:assembleRelease :androidApp:bundleRelease --stacktrace
 
-      - name: Sign APK
+      - name: Prepare signing directory
+        run: |
+          mkdir -p androidApp/build/outputs/release-artifacts
+          cp androidApp/build/outputs/apk/release/*.apk androidApp/build/outputs/release-artifacts/
+          cp androidApp/build/outputs/bundle/release/*.aab androidApp/build/outputs/release-artifacts/
+
+      - name: Sign Release Artifacts (APK & AAB)
         uses: r0adkll/sign-android-release@v1
-        id: sign_apk
+        id: sign_app
         with:
-          releaseDirectory: androidApp/build/outputs/apk/release
+          releaseDirectory: androidApp/build/outputs/release-artifacts
           signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           alias: ${{ secrets.ALIAS_NAME }}
           keyStorePassword: ${{ secrets.KEYSTORE_PASS }}
@@ -43,22 +50,15 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: "37.0.0"
 
-      - name: Sign App Bundle (AAB)
-        uses: r0adkll/sign-android-release@v1
-        id: sign_aab
-        with:
-          releaseDirectory: androidApp/build/outputs/bundle/release
-          signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          alias: ${{ secrets.ALIAS_NAME }}
-          keyStorePassword: ${{ secrets.KEYSTORE_PASS }}
-          keyPassword: ${{ secrets.ALIAS_PASS }}
-        env:
-          BUILD_TOOLS_VERSION: "37.0.0"
+      - name: Rename Signed Artifacts
+        run: |
+          mv androidApp/build/outputs/release-artifacts/*.apk ./doc-scanner-${{ github.ref_name }}.apk
+          mv androidApp/build/outputs/release-artifacts/*.aab ./doc-scanner-${{ github.ref_name }}.aab
 
       - name: Upload APK to Release
         uses: svenstaro/upload-release-action@v2
         with:
-          file: ${{ steps.sign_apk.outputs.signedReleaseFile }}
+          file: ./doc-scanner-${{ github.ref_name }}.apk
           asset_name: doc-scanner-${{ github.ref_name }}.apk
           overwrite: true
           prerelease: true
@@ -68,7 +68,7 @@ jobs:
       - name: Upload App Bundle (AAB) to Release
         uses: svenstaro/upload-release-action@v2
         with:
-          file: ${{ steps.sign_aab.outputs.signedReleaseFile }}
+          file: ./doc-scanner-${{ github.ref_name }}.aab
           asset_name: doc-scanner-${{ github.ref_name }}.aab
           overwrite: true
           prerelease: true
