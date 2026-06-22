@@ -1,4 +1,3 @@
----
 name: Android Release
 
 on:
@@ -32,23 +31,17 @@ jobs:
       - name: Build Release (APK & AAB)
         run: ./gradlew :androidApp:assembleRelease :androidApp:bundleRelease --stacktrace
 
-      - name: Sign APK
-        uses: r0adkll/sign-android-release@v1
-        id: sign_apk
-        with:
-          releaseDirectory: androidApp/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          alias: ${{ secrets.ALIAS_NAME }}
-          keyStorePassword: ${{ secrets.KEYSTORE_PASS }}
-          keyPassword: ${{ secrets.ALIAS_PASS }}
-        env:
-          BUILD_TOOLS_VERSION: "37.0.0"
+      - name: Prepare signing directory
+        run: |
+          mkdir -p release-artifacts
+          cp androidApp/build/outputs/apk/release/*.apk release-artifacts/
+          cp androidApp/build/outputs/bundle/release/*.aab release-artifacts/
 
-      - name: Sign App Bundle (AAB)
+      - name: Sign Release Artifacts (APK & AAB)
         uses: r0adkll/sign-android-release@v1
-        id: sign_aab
+        id: sign_app
         with:
-          releaseDirectory: androidApp/build/outputs/bundle/release
+          releaseDirectory: release-artifacts
           signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           alias: ${{ secrets.ALIAS_NAME }}
           keyStorePassword: ${{ secrets.KEYSTORE_PASS }}
@@ -58,8 +51,8 @@ jobs:
 
       - name: Locate and Rename Signed Artifacts
         run: |
-          APK_PATH=$(find androidApp/build/outputs/apk/release/ -name "*.apk" ! -name "*-unsigned.apk" | head -n 1)
-          AAB_PATH=$(find androidApp/build/outputs/bundle/release/ -name "*.aab" | head -n 1)
+          APK_PATH=$(find release-artifacts/ -name "*.apk" ! -name "*-unsigned.apk" | head -n 1)
+          AAB_PATH=$(find release-artifacts/ -name "*.aab" ! -name "*-unsigned.aab" | head -n 1)
 
           if [ -z "$APK_PATH" ]; then
             echo "Error: Signed APK not found!"
