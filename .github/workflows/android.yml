@@ -1,3 +1,4 @@
+---
 name: Android Release
 
 on:
@@ -31,43 +32,51 @@ jobs:
       - name: Build Release (APK & AAB)
         run: ./gradlew :androidApp:assembleRelease :androidApp:bundleRelease --stacktrace
 
-      - name: Prepare signing directory
+      - name: Sign APK and AAB Artifacts
         run: |
-          mkdir -p release-artifacts
-          cp androidApp/build/outputs/apk/release/*.apk release-artifacts/
-          cp androidApp/build/outputs/bundle/release/*.aab release-artifacts/
+          # 1. Decode keystore
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
 
-      - name: Sign Release Artifacts (APK & AAB)
-        uses: r0adkll/sign-android-release@v1
-        id: sign_app
-        with:
-          releaseDirectory: release-artifacts
-          signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          alias: ${{ secrets.ALIAS_NAME }}
-          keyStorePassword: ${{ secrets.KEYSTORE_PASS }}
-          keyPassword: ${{ secrets.ALIAS_PASS }}
-        env:
-          BUILD_TOOLS_VERSION: "37.0.0"
+          # 2. Locate unsigned files
+          unsigned_apk=$(find androidApp/build/outputs/apk/release/ -name "*.apk" | head -n 1)
+          unsigned_aab=$(find androidApp/build/outputs/bundle/release/ -name "*.aab" | head -n 1)
 
-      - name: Locate and Rename Signed Artifacts
-        run: |
-          APK_PATH=$(find release-artifacts/ -name "*.apk" ! -name "*-unsigned.apk" | head -n 1)
-          AAB_PATH=$(find release-artifacts/ -name "*.aab" ! -name "*-unsigned.aab" | head -n 1)
-
-          if [ -z "$APK_PATH" ]; then
-            echo "Error: Signed APK not found!"
+          if [ -z "$unsigned_apk" ]; then
+            echo "Error: Unsigned APK not found!"
             exit 1
           fi
-          if [ -z "$AAB_PATH" ]; then
-            echo "Error: Signed AAB not found!"
+          if [ -z "$unsigned_aab" ]; then
+            echo "Error: Unsigned AAB not found!"
             exit 1
           fi
 
-          echo "Found signed APK: $APK_PATH"
-          echo "Found signed AAB: $AAB_PATH"
+          echo "Found unsigned APK: $unsigned_apk"
+          echo "Found unsigned AAB: $unsigned_aab"
 
-          cp "$APK_PATH" ./doc-scanner-${{ github.ref_name }}.apk
-          cp "$AAB_PATH" ./doc-scanner-${{ github.ref_name }}.aab
+          # 3. Sign APK using apksigner
+          apksigner_path=$(find $ANDROID_HOME/build-tools -name "apksigner" | sort -V | tail -n 1)
+          echo "Using apksigner at: $apksigner_path"
+          $apksigner_path sign --ks release.keystore \
+            --ks-key-alias "${{ secrets.ALIAS_NAME }}" \
+            --ks-pass pass:"${{ secrets.KEYSTORE_PASS }}" \
+            --key-pass pass:"${{ secrets.ALIAS_PASS }}" \
+            --out ./doc-scanner-${{ github.ref_name }}.apk \
+            "$unsigned_apk"
+
+          # 4. Sign AAB using jarsigner
+          echo "Signing AAB..."
+          cp "$unsigned_aab" ./doc-scanner-${{ github.ref_name }}.aab
+          jarsigner -keystore release.keystore \
+            -storepass "${{ secrets.KEYSTORE_PASS }}" \
+            -keypass "${{ secrets.ALIAS_PASS }}" \
+            ./doc-scanner-${{ github.ref_name }}.aab \
+            "${{ secrets.ALIAS_NAME }}"
+
+          # 5. Verify APK
+          $apksigner_path verify ./doc-scanner-${{ github.ref_name }}.apk
+
+          # Clean up local keystore file
+          rm -f release.keystore
 
       - name: Create Release and Upload Artifacts
         run: |
