@@ -1,3 +1,4 @@
+---
 name: Android Release
 
 on:
@@ -24,14 +25,14 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-        
+
       - name: Test with Gradle
         run: ./gradlew test
 
       - name: Build Release (APK & AAB)
         run: ./gradlew :androidApp:assembleRelease :androidApp:bundleRelease --stacktrace
 
-      - name: Sign APK
+      - name: Sign APK Release Artifacts
         uses: r0adkll/sign-android-release@v1
         id: sign_apk
         with:
@@ -41,36 +42,63 @@ jobs:
           keyStorePassword: ${{ secrets.KEYSTORE_PASS }}
           keyPassword: ${{ secrets.ALIAS_PASS }}
         env:
-          BUILD_TOOLS_VERSION: "37.0.0"
+          BUILD_TOOLS_VERSION: "34.0.0"
 
-      - name: Sign App Bundle (AAB)
+      - name: Sign AAB Release Artifacts
         uses: r0adkll/sign-android-release@v1
         id: sign_aab
         with:
           releaseDirectory: androidApp/build/outputs/bundle/release
-          signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          alias: ${{ secrets.ALIAS_NAME }}
-          keyStorePassword: ${{ secrets.KEYSTORE_PASS }}
-          keyPassword: ${{ secrets.ALIAS_PASS }}
+          signingKeyBase64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+          alias: ${{ secrets.UPLOAD_ALIAS_NAME }}
+          keyStorePassword: ${{ secrets.UPLOAD_KEYSTORE_PASS }}
+          keyPassword: ${{ secrets.UPLOAD_KEYSTORE_PASS }}
         env:
-          BUILD_TOOLS_VERSION: "37.0.0"
+          BUILD_TOOLS_VERSION: "34.0.0"
 
-      - name: Upload APK to Release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          file: ${{ steps.sign_apk.outputs.signedReleaseFile }}
-          asset_name: doc-scanner-${{ github.ref_name }}.apk
-          overwrite: true
-          prerelease: true
-          draft: true
-          body: "Release ${{ github.ref_name }}"
+      - name: Locate and Rename Signed Artifacts
+        run: |
+          APK_PATH="${{ steps.sign_apk.outputs.signedReleaseFile }}"
+          AAB_PATH="${{ steps.sign_aab.outputs.signedReleaseFile }}"
 
-      - name: Upload App Bundle (AAB) to Release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          file: ${{ steps.sign_aab.outputs.signedReleaseFile }}
-          asset_name: doc-scanner-${{ github.ref_name }}.aab
-          overwrite: true
-          prerelease: true
-          draft: true
-          body: "Release ${{ github.ref_name }}"
+          if [ -z "$APK_PATH" ]; then
+            echo "Error: Signed APK not found via Action outputs!"
+            exit 1
+          fi
+          if [ -z "$AAB_PATH" ]; then
+            echo "Error: Signed AAB not found via Action outputs!"
+            exit 1
+          fi
+
+          echo "Found signed APK: $APK_PATH"
+          echo "Found signed AAB: $AAB_PATH"
+
+          cp "$APK_PATH" ./doc-scanner-${{ github.ref_name }}.apk
+          cp "$AAB_PATH" ./doc-scanner-${{ github.ref_name }}.aab
+
+      - name: Create Release
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --draft \
+            --prerelease \
+            --title "Release ${{ github.ref_name }}" \
+            --notes "Release ${{ github.ref_name }}" \
+            || echo "Release already exists"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload APK Asset
+        run: |
+          gh release upload "${{ github.ref_name }}" \
+            ./doc-scanner-${{ github.ref_name }}.apk \
+            --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload AAB Asset
+        run: |
+          gh release upload "${{ github.ref_name }}" \
+            ./doc-scanner-${{ github.ref_name }}.aab \
+            --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

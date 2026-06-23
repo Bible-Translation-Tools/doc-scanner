@@ -14,6 +14,9 @@ dependencies {
     implementation(libs.compose.runtime)
     implementation(libs.androidx.activity.compose)
 
+    compileOnly(libs.voyager.navigator)
+    compileOnly(libs.voyager.screenmodel)
+
     implementation(libs.koin.android)
     implementation(libs.slf4j.jvm)
     implementation(libs.logback.android)
@@ -41,7 +44,12 @@ android {
     }
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
     compileOptions {
