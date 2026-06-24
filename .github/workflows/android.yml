@@ -3,8 +3,6 @@ name: Android Release
 
 on:
   push:
-    tags:
-      - 'v*'
 
 permissions:
   contents: write
@@ -16,6 +14,17 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Set Build Secrets
+        uses: 1password/load-secrets-action@v2
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          UPLOAD_ALIAS_NAME: "op://DevOps/Play-store-upload-key/alias-name"
+          UPLOAD_ALIAS_PASS: "op://DevOps/Play-store-upload-key/alias-password"
+          UPLOAD_KEYSTORE_PASS: "op://DevOps/Play-store-upload-key/keystore-password"
+          UPLOAD_KEYSTORE_BASE64: "op://DevOps/Play-store-upload-key/keystore-base64"
+
       - name: set up JDK 21
         uses: actions/setup-java@v3
         with:
@@ -25,6 +34,15 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+
+      - name: Read app version
+        id: app_version
+        run: |
+          VERSION_NAME=$(grep -E '^app-versionName' gradle/libs.versions.toml | sed -E 's/.*"([^"]+)".*/\1/')
+          VERSION_CODE=$(grep -E '^app-versionCode' gradle/libs.versions.toml | sed -E 's/.*"([^"]+)".*/\1/')
+          ARTIFACT_BASE="doc-scanner-${VERSION_NAME}+${{ github.run_number }}-v${VERSION_CODE}-android"
+          echo "ARTIFACT_BASE=$ARTIFACT_BASE" >> "$GITHUB_ENV"
+          echo "Artifact base name: $ARTIFACT_BASE"
 
       - name: Test with Gradle
         run: ./gradlew test
@@ -49,10 +67,10 @@ jobs:
         id: sign_aab
         with:
           releaseDirectory: androidApp/build/outputs/bundle/release
-          signingKeyBase64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
-          alias: ${{ secrets.UPLOAD_ALIAS_NAME }}
-          keyStorePassword: ${{ secrets.UPLOAD_KEYSTORE_PASS }}
-          keyPassword: ${{ secrets.UPLOAD_KEYSTORE_PASS }}
+          signingKeyBase64: ${{ env.UPLOAD_KEYSTORE_BASE64 }}
+          alias: ${{ env.UPLOAD_ALIAS_NAME }}
+          keyStorePassword: ${{ env.UPLOAD_KEYSTORE_PASS }}
+          keyPassword: ${{ env.UPLOAD_ALIAS_PASS }}
         env:
           BUILD_TOOLS_VERSION: "34.0.0"
 
@@ -73,10 +91,20 @@ jobs:
           echo "Found signed APK: $APK_PATH"
           echo "Found signed AAB: $AAB_PATH"
 
-          cp "$APK_PATH" ./doc-scanner-${{ github.ref_name }}.apk
-          cp "$AAB_PATH" ./doc-scanner-${{ github.ref_name }}.aab
+          cp "$APK_PATH" "./${ARTIFACT_BASE}.apk"
+          cp "$AAB_PATH" "./${ARTIFACT_BASE}.aab"
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_BASE }}
+          path: |
+            ./${{ env.ARTIFACT_BASE }}.apk
+            ./${{ env.ARTIFACT_BASE }}.aab
+          if-no-files-found: error
 
       - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           gh release create "${{ github.ref_name }}" \
             --draft \
@@ -88,17 +116,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload APK Asset
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           gh release upload "${{ github.ref_name }}" \
-            ./doc-scanner-${{ github.ref_name }}.apk \
+            "./${ARTIFACT_BASE}.apk" \
             --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload AAB Asset
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           gh release upload "${{ github.ref_name }}" \
-            ./doc-scanner-${{ github.ref_name }}.aab \
+            "./${ARTIFACT_BASE}.aab" \
             --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

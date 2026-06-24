@@ -72,6 +72,7 @@ data class SyncItem(
 
 enum class Model(val value: String) {
     OPENAI("openai"),
+    GEMINI("gemini"),
     PIXTRAL("pixtral")
 }
 
@@ -100,7 +101,7 @@ class TranscriberApi(preferenceRepository: PreferenceRepository) {
             )
         }
         install(UserAgent) {
-            agent = "doc-scanner"
+            agent = "btt-doc-scanner" //"btt-writer-android"
         }
     }
 
@@ -151,7 +152,7 @@ class TranscriberApi(preferenceRepository: PreferenceRepository) {
     internal companion object {
         const val BASE_URL = "https://transcriber.wycliffe-associates-account.workers.dev"
         const val BASE_API_URL = "$BASE_URL/api/v1"
-        const val DEFAULT_PROMPT = "The image says: "
-        const val DEFAULT_SYSTEM_PROMPT = "You are an expert at transcribing handwritten images of various languages. Respond only with the transcription of the image provided, do not output the transcription in quotes, parentheses, brackets or other such symbols"
+        const val DEFAULT_PROMPT = "Carefully read the text in this image and provide only the transcription in the 'transcription' field of the JSON response."
+        const val DEFAULT_SYSTEM_PROMPT = "You are an expert at reading and transcribing text from images (including handwriting, print, and mixed languages). You must return a JSON object with exactly one key, 'transcription', whose value is the transcribed text from the image. Preserve the original language(s), numbers, punctuation, and line breaks as much as possible. Do not add explanations, labels, or metadata. If a small part is unreadable, skip or approximate it rather than inventing new content. Output only valid JSON that matches the expected schema."
     }
 }
