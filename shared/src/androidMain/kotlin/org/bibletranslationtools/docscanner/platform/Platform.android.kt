@@ -108,51 +108,6 @@ private fun copyUriToCache(
     }
 }
 
-@Composable
-actual fun rememberFilePicker(
-    directoryProvider: DirectoryProvider,
-    onResult: (Path?) -> Unit
-): FilePicker {
-    val context = LocalContext.current
-
-    val launcher = rememberLauncherForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.GetContent()
-    ) { uri ->
-        if (uri != null) {
-            onResult(copyPickedUriToCache(context, uri, directoryProvider))
-        } else {
-            onResult(null)
-        }
-    }
-
-    return remember {
-        object : FilePicker {
-            override fun launch() {
-                launcher.launch("application/json")
-            }
-        }
-    }
-}
-
-private fun copyPickedUriToCache(
-    context: android.content.Context,
-    uri: Uri,
-    directoryProvider: DirectoryProvider
-): Path? {
-    return try {
-        val tempPath = directoryProvider.createTempFile("import", ".json")
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            SystemFileSystem.sink(tempPath).buffered().use { sink ->
-                input.asSource().buffered().transferTo(sink)
-            }
-        }
-        tempPath
-    } catch (e: Exception) {
-        logger.error(e) { "Failed to copy picked file to cache" }
-        null
-    }
-}
-
 actual fun renderPdfToImages(
     pdfPath: Path,
     directoryProvider: DirectoryProvider

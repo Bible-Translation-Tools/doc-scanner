@@ -21,6 +21,7 @@ dependencies {
     implementation(libs.slf4j.jvm)
     implementation(libs.logback.android)
     implementation(libs.kotlinx.io)
+    implementation(libs.filekit.dialogs.core)
 
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)

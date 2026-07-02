@@ -1,9 +1,7 @@
 package org.bibletranslationtools.docscanner.api
 
-import kotlinx.io.buffered
-import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
-import kotlinx.io.readByteArray
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.readBytes
 import org.bibletranslationtools.docscanner.data.JsonLenient
 import org.bibletranslationtools.docscanner.data.models.Language
 import org.bibletranslationtools.docscanner.data.repository.LanguageRepository
@@ -24,8 +22,8 @@ class UpdateLanguages(
      * Imports a language list from a locally picked langnames.json file and merges it in.
      * @return number of newly added languages
      */
-    suspend fun fromFile(path: Path): Int {
-        val bytes = SystemFileSystem.source(path).buffered().use { it.readByteArray() }
+    suspend fun fromFile(file: PlatformFile): Int {
+        val bytes = file.readBytes()
         val languages = JsonLenient.decodeFromString<List<Language>>(bytes.decodeToString())
         return merge(languages)
     }

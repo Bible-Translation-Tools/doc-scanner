@@ -7,6 +7,7 @@ import docscanner.composeapp.generated.resources.languages_update_failed
 import docscanner.composeapp.generated.resources.languages_updated
 import docscanner.composeapp.generated.resources.updating_languages
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -15,7 +16,6 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.io.files.Path
 import org.bibletranslationtools.docscanner.api.Model
 import org.bibletranslationtools.docscanner.api.UpdateLanguages
 import org.bibletranslationtools.docscanner.data.Settings.KEY_PREF_DEFAULT_MODEL
@@ -38,7 +38,7 @@ sealed class SettingsEvent {
     data class SelectModel(val model: Model) : SettingsEvent()
     data class SetProcessImmediately(val value: Boolean) : SettingsEvent()
     data object DownloadLanguages : SettingsEvent()
-    data class ImportLanguages(val path: Path) : SettingsEvent()
+    data class ImportLanguages(val file: PlatformFile) : SettingsEvent()
 }
 
 class SettingsViewModel(
@@ -78,7 +78,7 @@ class SettingsViewModel(
             is SettingsEvent.SelectModel -> selectModel(event.model)
             is SettingsEvent.SetProcessImmediately -> setProcessImmediately(event.value)
             is SettingsEvent.DownloadLanguages -> runUpdateLanguages { updateLanguages.fromUrl() }
-            is SettingsEvent.ImportLanguages -> runUpdateLanguages { updateLanguages.fromFile(event.path) }
+            is SettingsEvent.ImportLanguages -> runUpdateLanguages { updateLanguages.fromFile(event.file) }
         }
     }
 
