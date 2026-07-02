@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -24,9 +27,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import docscanner.composeapp.generated.resources.Res
 import docscanner.composeapp.generated.resources.document_scanner
+import docscanner.composeapp.generated.resources.login
 import docscanner.composeapp.generated.resources.login_needed
+import docscanner.composeapp.generated.resources.logout
 import docscanner.composeapp.generated.resources.no_scan_found
 import docscanner.composeapp.generated.resources.scan
 import docscanner.composeapp.generated.resources.scanner_not_available
@@ -47,6 +54,7 @@ import org.bibletranslationtools.docscanner.ui.common.ExtraAction
 import org.bibletranslationtools.docscanner.ui.common.PageType
 import org.bibletranslationtools.docscanner.ui.common.ProgressDialog
 import org.bibletranslationtools.docscanner.ui.common.TopNavigationBar
+import org.bibletranslationtools.docscanner.ui.screens.login.LoginScreen
 import org.bibletranslationtools.docscanner.ui.screens.project.components.PdfLayout
 import org.bibletranslationtools.docscanner.ui.screens.project.components.PdfRenameDialog
 import org.bibletranslationtools.docscanner.ui.screens.project.components.UploadCompleteDialog
@@ -68,9 +76,14 @@ data class ProjectScreen(
         val viewModel = koinScreenModel<ProjectViewModel> {
             parametersOf(project)
         }
+        val navigator = LocalNavigator.currentOrThrow
 
         var renamePdf by remember { mutableStateOf<Pdf?>(null) }
         var extractedImages by remember { mutableStateOf<List<Image>>(emptyList()) }
+
+        LaunchedEffect(Unit) {
+            viewModel.onEvent(ProjectEvent.RefreshUser)
+        }
 
         val uiScope = rememberCoroutineScope()
         val snackbarHostState = remember { SnackbarHostState() }
@@ -102,6 +115,22 @@ data class ProjectScreen(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 val extraActions = mutableListOf<ExtraAction>()
+                extraActions.add(
+                    if (state.user != null) {
+                        ExtraAction(
+                            title = stringResource(Res.string.logout),
+                            icon = Icons.AutoMirrored.Filled.Logout,
+                            onClick = { viewModel.onEvent(ProjectEvent.Logout) }
+                        )
+                    } else {
+                        ExtraAction(
+                            title = stringResource(Res.string.login),
+                            icon = Icons.AutoMirrored.Filled.Login,
+                            onClick = { navigator.push(LoginScreen()) }
+                        )
+                    }
+                )
+
                 TopNavigationBar(
                     title = project.getTitle(),
                     user = state.user,
@@ -164,7 +193,7 @@ data class ProjectScreen(
                                     renamePdf = pdf
                                 },
                                 onUploadClick = {
-                                    if (user != null) {
+                                    if (state.user != null) {
                                         viewModel.onEvent(ProjectEvent.ExtractImages(pdf))
                                     } else {
                                         uiScope.launch {

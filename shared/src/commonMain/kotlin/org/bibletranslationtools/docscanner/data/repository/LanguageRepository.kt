@@ -11,9 +11,17 @@ interface LanguageRepository {
     suspend fun insert(language: Language)
     suspend fun delete(language: Language)
     suspend fun update(language: Language)
+
+    /**
+     * Inserts new languages and updates existing ones (matched by slug, preserving id)
+     * in a single database transaction. Doing thousands of individual autocommit
+     * statements (one per language) is orders of magnitude slower than one transaction.
+     * @return number of newly added languages
+     */
+    suspend fun upsertAll(languages: List<Language>): Int
 }
 
-class LanguageRepositoryImpl(db: MainDatabase) : LanguageRepository {
+class LanguageRepositoryImpl(private val db: MainDatabase) : LanguageRepository {
     private val queries = db.languageQueries
 
     override fun getAll(): List<Language> {
@@ -50,5 +58,43 @@ class LanguageRepositoryImpl(db: MainDatabase) : LanguageRepository {
             entity.direction,
             entity.gw,
         )
+    }
+
+    override suspend fun upsertAll(languages: List<Language>): Int {
+        val existingBySlug = getAll().associateBy { it.slug }
+        var added = 0
+
+        db.transaction {
+            languages.forEach { language ->
+                val existing = existingBySlug[language.slug]
+                val entity = if (existing != null) {
+                    language.copy(id = existing.id).toEntity()
+                } else {
+                    added++
+                    language.toEntity()
+                }
+
+                if (existing != null) {
+                    queries.update(
+                        entity.id,
+                        entity.slug,
+                        entity.name,
+                        entity.angName,
+                        entity.direction,
+                        entity.gw
+                    )
+                } else {
+                    queries.add(
+                        entity.slug,
+                        entity.name,
+                        entity.angName,
+                        entity.direction,
+                        entity.gw
+                    )
+                }
+            }
+        }
+
+        return added
     }
 }

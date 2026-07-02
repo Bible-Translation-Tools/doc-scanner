@@ -11,9 +11,12 @@ interface BookRepository {
     suspend fun insert(book: Book)
     suspend fun delete(book: Book)
     suspend fun update(book: Book)
+
+    /** Inserts all [books] in a single database transaction. */
+    suspend fun insertAll(books: List<Book>)
 }
 
-class BookRepositoryImpl(db: MainDatabase) : BookRepository {
+class BookRepositoryImpl(private val db: MainDatabase) : BookRepository {
     private val queries = db.bookQueries
 
     override fun getAll() = queries.getAll().executeAsList().map { it.toModel() }
@@ -46,5 +49,19 @@ class BookRepositoryImpl(db: MainDatabase) : BookRepository {
             entity.anthology,
             entity.sort
         )
+    }
+
+    override suspend fun insertAll(books: List<Book>) {
+        db.transaction {
+            books.forEach { book ->
+                val entity = book.toEntity()
+                queries.add(
+                    entity.slug,
+                    entity.name,
+                    entity.anthology,
+                    entity.sort
+                )
+            }
+        }
     }
 }

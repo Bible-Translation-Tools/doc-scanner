@@ -11,9 +11,12 @@ interface LevelRepository {
     suspend fun insert(level: Level)
     suspend fun delete(level: Level)
     suspend fun update(level: Level)
+
+    /** Inserts all [levels] in a single database transaction. */
+    suspend fun insertAll(levels: List<Level>)
 }
 
-class LevelRepositoryImpl(db: MainDatabase) : LevelRepository {
+class LevelRepositoryImpl(private val db: MainDatabase) : LevelRepository {
     private val queries = db.levelQueries
 
     override fun getAll() = queries.getAll().executeAsList().map { it.toModel() }
@@ -42,5 +45,17 @@ class LevelRepositoryImpl(db: MainDatabase) : LevelRepository {
             entity.slug,
             entity.name
         )
+    }
+
+    override suspend fun insertAll(levels: List<Level>) {
+        db.transaction {
+            levels.forEach { level ->
+                val entity = level.toEntity()
+                queries.add(
+                    entity.slug,
+                    entity.name
+                )
+            }
+        }
     }
 }

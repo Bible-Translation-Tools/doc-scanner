@@ -1,6 +1,6 @@
 [versions]
-app-versionName = "0.5.2"
-app-versionCode = "12"
+app-versionName = "0.5.3"
+app-versionCode = "13"
 agp = "9.2.1"
 android-compileSdk = "37"
 android-minSdk = "24"
@@ -9,15 +9,16 @@ androidx-activityCompose = "1.13.0"
 androidx-lifecycle = "2.10.0"
 coil = "3.5.0"
 compose-multiplatform = "1.11.1"
+filekitDialogs = "0.14.2"
 compose-material3 = "1.9.0"
 compose-materialIcons = "1.7.3"
 koin = "4.2.2"
 kotlin = "2.4.0"
 kotlinxDatetitme = "0.8.0"
-kotlinxIo = "0.9.0"
+kotlinxIo = "0.9.1"
 kotlinLogging = "8.0.4"
 kotlinxSerializationJson = "1.11.0"
-ktor = "3.5.0"
+ktor = "3.5.1"
 kzip = "1.1.1"
 logback = "3.0.0"
 mlKit = "16.0.0"
@@ -35,6 +36,8 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-runtime-compose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+filekit-dialogs-core = { module = "io.github.vinceglb:filekit-dialogs", version.ref = "filekitDialogs" }
+filekit-dialogs-compose = { module = "io.github.vinceglb:filekit-dialogs-compose", version.ref = "filekitDialogs" }
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose-multiplatform" }
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose-multiplatform" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose-multiplatform" }

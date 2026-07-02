@@ -41,8 +41,8 @@ import org.bibletranslationtools.docscanner.platform.ExitOnBackHandler
 import org.bibletranslationtools.docscanner.platform.rememberFileSharer
 import org.bibletranslationtools.docscanner.ui.common.TopNavigationBar
 import org.bibletranslationtools.docscanner.ui.screens.home.components.CreateProjectDialog
-import org.bibletranslationtools.docscanner.ui.screens.home.components.LoginDialog
 import org.bibletranslationtools.docscanner.ui.screens.home.components.ProjectLayout
+import org.bibletranslationtools.docscanner.ui.screens.login.LoginScreen
 import org.bibletranslationtools.docscanner.ui.screens.project.ProjectScreen
 import org.bibletranslationtools.docscanner.ui.viewmodel.HomeEvent
 import org.bibletranslationtools.docscanner.ui.viewmodel.HomeViewModel
@@ -59,9 +59,12 @@ class HomeScreen : Screen {
         var expandedItemId by remember { mutableStateOf<Long?>(null) }
 
         var showCreateProjectDialog by remember { mutableStateOf(false) }
-        var showLoginDialog by remember { mutableStateOf(false) }
 
         val fileSharer = rememberFileSharer()
+
+        LaunchedEffect(Unit) {
+            viewModel.onEvent(HomeEvent.RefreshUser)
+        }
 
         LaunchedEffect(event) {
             when (event) {
@@ -89,7 +92,7 @@ class HomeScreen : Screen {
                         ExtraAction(
                             title = stringResource(Res.string.login),
                             icon = Icons.AutoMirrored.Filled.Login,
-                            onClick = { showLoginDialog = true }
+                            onClick = { navigator.push(LoginScreen()) }
                         )
                     }
                 )
@@ -157,15 +160,6 @@ class HomeScreen : Screen {
                     levels = state.levels,
                     onCreate = { viewModel.onEvent(HomeEvent.CreateProject(it)) },
                     onDismissRequest = { showCreateProjectDialog = false }
-                )
-            }
-
-            if (showLoginDialog) {
-                LoginDialog(
-                    onLogin = { username, password ->
-                        viewModel.onEvent(HomeEvent.Login(username, password))
-                    },
-                    onDismissRequest = { showLoginDialog = false }
                 )
             }
 

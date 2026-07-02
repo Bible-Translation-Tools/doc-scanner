@@ -9,6 +9,8 @@ import docscanner.composeapp.generated.resources.delete_pdf_confirm
 import docscanner.composeapp.generated.resources.delete_pdf_failed
 import docscanner.composeapp.generated.resources.deleting_pdf
 import docscanner.composeapp.generated.resources.loading_pdfs
+import docscanner.composeapp.generated.resources.logged_out
+import docscanner.composeapp.generated.resources.logging_out
 import docscanner.composeapp.generated.resources.preparing_images
 import docscanner.composeapp.generated.resources.rename_pdf_failed
 import docscanner.composeapp.generated.resources.renaming_pdf
@@ -34,7 +36,10 @@ import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.readByteArray
 import org.bibletranslationtools.docscanner.api.HtrUser
 import org.bibletranslationtools.docscanner.api.ImageRequest
+import org.bibletranslationtools.docscanner.api.Model
 import org.bibletranslationtools.docscanner.api.TranscriberApi
+import org.bibletranslationtools.docscanner.data.Settings.KEY_PREF_DEFAULT_MODEL
+import org.bibletranslationtools.docscanner.data.Settings.KEY_PREF_PROCESS_IMMEDIATELY
 import org.bibletranslationtools.docscanner.data.models.Alert
 import org.bibletranslationtools.docscanner.data.models.Image
 import org.bibletranslationtools.docscanner.data.models.Pdf
@@ -43,6 +48,8 @@ import org.bibletranslationtools.docscanner.data.models.Project
 import org.bibletranslationtools.docscanner.data.models.getName
 import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
 import org.bibletranslationtools.docscanner.data.repository.PdfRepository
+import org.bibletranslationtools.docscanner.data.repository.PreferenceRepository
+import org.bibletranslationtools.docscanner.data.repository.getPref
 import org.bibletranslationtools.docscanner.platform.renderPdfToImages
 import org.bibletranslationtools.docscanner.ui.common.ConfirmAction
 import org.bibletranslationtools.docscanner.ui.screens.project.components.UploadStatus
@@ -73,13 +80,16 @@ sealed class ProjectEvent {
     data class UploadImages(val images: List<Image>) : ProjectEvent()
     data class ExtractImages(val pdf: Pdf): ProjectEvent()
     data class ImagesExtracted(val images: List<Image>): ProjectEvent()
+    data object Logout : ProjectEvent()
+    data object RefreshUser : ProjectEvent()
 }
 
 class ProjectViewModel(
     private val project: Project,
     private val directoryProvider: DirectoryProvider,
     private val pdfRepository: PdfRepository,
-    private val transcriberApi: TranscriberApi
+    private val transcriberApi: TranscriberApi,
+    private val preferenceRepository: PreferenceRepository
 ) : ScreenModel {
 
     private var _state = MutableStateFlow(ProjectState())
@@ -104,6 +114,8 @@ class ProjectViewModel(
             is ProjectEvent.OpenPdf -> openPdf(event.pdf)
             is ProjectEvent.UploadImages -> uploadImages(event.images)
             is ProjectEvent.ExtractImages -> extractImages(event.pdf)
+            is ProjectEvent.Logout -> logout()
+            is ProjectEvent.RefreshUser -> refreshUser()
             else -> resetChannel()
         }
     }
@@ -191,6 +203,15 @@ class ProjectViewModel(
             val total = images.size
             var uploaded = 0
 
+            val model = preferenceRepository.getPref(
+                KEY_PREF_DEFAULT_MODEL,
+                Model.OPENAI.value
+            )
+            val processImmediately = preferenceRepository.getPref(
+                KEY_PREF_PROCESS_IMMEDIATELY,
+                true
+            )
+
             try {
                 images.forEachIndexed { index, image ->
                     val path = Path(image.path)
@@ -209,7 +230,9 @@ class ProjectViewModel(
                             languageCode = project.language.slug,
                             bookCode = project.book.slug,
                             chapter = image.chapter,
-                            created = created
+                            model = model,
+                            created = created,
+                            processImmediately = processImmediately
                         )
                         val response = transcriberApi.uploadImage(imageRequest)
 
@@ -352,6 +375,32 @@ class ProjectViewModel(
             updateProgress(null)
 
             _event.send(ProjectEvent.ImagesExtracted(images))
+        }
+    }
+
+    private fun refreshUser() {
+        screenModelScope.launch(Dispatchers.Default) {
+            updateUser(transcriberApi.getUser())
+        }
+    }
+
+    private fun logout() {
+        screenModelScope.launch(Dispatchers.Default) {
+            updateProgress(Progress(-1f, getString(Res.string.logging_out)))
+
+            _state.value.user?.let {
+                transcriberApi.logout()
+
+                updateUser(null)
+
+                updateAlert(
+                    Alert(getString(Res.string.logged_out)) {
+                        updateAlert(null)
+                    }
+                )
+            }
+
+            updateProgress(null)
         }
     }
 

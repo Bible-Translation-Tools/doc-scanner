@@ -9,6 +9,8 @@ import ch.qos.logback.classic.android.LogcatAppender
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.FileAppender
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.dialogs.init
 import org.bibletranslationtools.docscanner.data.repository.DirectoryProvider
 import org.koin.android.ext.android.inject
 import org.slf4j.LoggerFactory
@@ -19,6 +21,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        FileKit.init(this)
 
         configureLogback()
 

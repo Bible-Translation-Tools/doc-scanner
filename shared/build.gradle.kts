@@ -80,6 +80,9 @@ kotlin {
 
             implementation(libs.coil.compose)
             implementation(libs.kotlin.logging)
+
+            implementation(libs.filekit.dialogs.core)
+            implementation(libs.filekit.dialogs.compose)
         }
     }
 
