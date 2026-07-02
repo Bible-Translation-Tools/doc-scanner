@@ -50,6 +50,21 @@ interface FileSharer {
 expect fun rememberFileSharer(): FileSharer
 
 /**
+ * Launches the native file picker restricted to JSON files.
+ * The result delivered to `onResult` is a temporary copy of the picked file
+ * (in the cache dir), or `null` if the pick was canceled or failed.
+ */
+interface FilePicker {
+    fun launch()
+}
+
+@Composable
+expect fun rememberFilePicker(
+    directoryProvider: DirectoryProvider,
+    onResult: (Path?) -> Unit
+): FilePicker
+
+/**
  * Compresses the contents of [sourceDir] into the zip archive at [zipFile].
  */
 expect fun zipDirectory(sourceDir: Path, zipFile: Path)

@@ -85,9 +85,7 @@ class SplashViewModel(
 
                     val jsonString = loadAsset("langnames.json")
                     val languages = JsonLenient.decodeFromString<List<Language>>(jsonString)
-                    languages.forEach {
-                        languageRepository.insert(it)
-                    }
+                    languageRepository.upsertAll(languages)
                 } catch (e: Exception) {
                     logger.error(e) { initializationError }
                     updateAlert(
@@ -103,9 +101,7 @@ class SplashViewModel(
 
                     val jsonString = loadAsset("books.json")
                     val books = JsonLenient.decodeFromString<List<Book>>(jsonString)
-                    books.forEach {
-                        bookRepository.insert(it)
-                    }
+                    bookRepository.insertAll(books)
                 } catch (e: Exception) {
                     logger.error(e) { initializationError }
                     updateAlert(
@@ -121,9 +117,7 @@ class SplashViewModel(
 
                     val jsonString = loadAsset("levels.json")
                     val levels = JsonLenient.decodeFromString<List<Level>>(jsonString)
-                    levels.forEach {
-                        levelRepository.insert(it)
-                    }
+                    levelRepository.insertAll(levels)
                 } catch (e: Exception) {
                     logger.error(e) { initializationError }
                     updateAlert(

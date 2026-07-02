@@ -8,9 +8,7 @@ import docscanner.composeapp.generated.resources.delete_project_confirm
 import docscanner.composeapp.generated.resources.deleting_project
 import docscanner.composeapp.generated.resources.loading_projects
 import docscanner.composeapp.generated.resources.logged_out
-import docscanner.composeapp.generated.resources.logging_in
 import docscanner.composeapp.generated.resources.logging_out
-import docscanner.composeapp.generated.resources.login_failed
 import docscanner.composeapp.generated.resources.share_project_failed
 import docscanner.composeapp.generated.resources.sharing_project
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -26,7 +24,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
-import org.bibletranslationtools.docscanner.api.HtrLogin
 import org.bibletranslationtools.docscanner.api.HtrUser
 import org.bibletranslationtools.docscanner.api.TranscriberApi
 import org.bibletranslationtools.docscanner.data.models.Alert
@@ -63,14 +60,13 @@ sealed class HomeEvent {
     data class DeleteProject(val project: Project): HomeEvent()
     data class ShareProject(val project: Project): HomeEvent()
     data class ProjectShared(val path: Path): HomeEvent()
-    data class Login(val username: String, val password: String) : HomeEvent()
     data object Logout : HomeEvent()
+    data object RefreshUser : HomeEvent()
 }
 
 class HomeViewModel(
     private val projectRepository: ProjectRepository,
     private val directoryProvider: DirectoryProvider,
-    private val htrLogin: HtrLogin,
     private val languageRepository: LanguageRepository,
     private val bookRepository: BookRepository,
     private val levelRepository: LevelRepository,
@@ -116,8 +112,8 @@ class HomeViewModel(
             is HomeEvent.CreateProject -> createProject(event.project)
             is HomeEvent.DeleteProject -> deleteProject(event.project)
             is HomeEvent.ShareProject -> shareProject(event.project)
-            is HomeEvent.Login -> login(event.username, event.password)
             is HomeEvent.Logout -> logout()
+            is HomeEvent.RefreshUser -> refreshUser()
             else -> resetChannel()
         }
     }
@@ -193,26 +189,9 @@ class HomeViewModel(
         }
     }
 
-    private fun login(username: String, password: String) {
+    private fun refreshUser() {
         screenModelScope.launch(Dispatchers.Default) {
-            updateProgress(Progress(-1f, getString(Res.string.logging_in)))
-
-            val loginError = getString(Res.string.login_failed)
-
-            try {
-                val result = htrLogin.execute(username, password)
-                result.user?.let { user ->
-                    updateUser(user)
-                    // doRegisterSshKeys()
-                } ?: throw IllegalStateException("User is null")
-            } catch (e: Exception) {
-                logger.error(e) { loginError }
-                updateAlert(
-                    Alert(loginError) { updateAlert(null) }
-                )
-            }
-
-            updateProgress(null)
+            updateUser(transcriberApi.getUser())
         }
     }
 

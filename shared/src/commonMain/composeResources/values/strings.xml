@@ -22,6 +22,7 @@
     <string name="select_level">Select Level</string>
     <string name="login">Login</string>
     <string name="logout">Logout</string>
+    <string name="login_info">Log in using your WACS credentials</string>
     <string name="username">Username</string>
     <string name="password">Password</string>
     <string name="yes">Yes</string>
@@ -78,4 +79,19 @@
     <string name="preparing_images">Preparing images...</string>
     <string name="name">Name</string>
     <string name="chapter">Chapter</string>
+    <string name="settings">Settings</string>
+    <string name="ai_settings">AI Settings</string>
+    <string name="languages_section">Languages</string>
+    <string name="default_model">Default AI Model</string>
+    <string name="default_model_subtitle">AI model used to transcribe uploaded images</string>
+    <string name="select_model">Select Model</string>
+    <string name="process_immediately">Process Immediately</string>
+    <string name="process_immediately_subtitle">Start transcription right after upload</string>
+    <string name="download_languages">Download langnames.json</string>
+    <string name="download_languages_subtitle">Fetch the latest language list from the server</string>
+    <string name="import_languages">Import langnames.json</string>
+    <string name="import_languages_subtitle">Load a language list file from this device</string>
+    <string name="updating_languages">Updating languages...</string>
+    <string name="languages_updated">Languages updated. %1$d have been added.</string>
+    <string name="languages_update_failed">Failed to update languages</string>
 </resources>

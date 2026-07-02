@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,7 +31,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import docscanner.composeapp.generated.resources.Res
+import docscanner.composeapp.generated.resources.settings
 import org.bibletranslationtools.docscanner.api.HtrUser
+import org.bibletranslationtools.docscanner.ui.screens.settings.SettingsScreen
+import org.jetbrains.compose.resources.stringResource
 
 data class ExtraAction(
     val title: String,
@@ -82,64 +87,64 @@ fun TopNavigationBar(
             }
         },
         actions = {
-            IconButton(onClick = { showDropDownMenu = true }) {
-                Icon(
-                    imageVector = Icons.Default.MoreVert,
-                    contentDescription = null
-                )
-            }
+            if (page != PageType.SETTINGS) {
+                IconButton(onClick = { showDropDownMenu = true }) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = null
+                    )
+                }
 
-            DropdownMenu(
-                expanded = showDropDownMenu,
-                onDismissRequest = { showDropDownMenu = false },
-                modifier = Modifier.width(200.dp)
-            ) {
-                userState?.let { user ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.fillMaxWidth()
-                            .height(32.dp)
-                            .padding(bottom = 4.dp)
-                    ) {
-                        Text(text = user.wacsUsername)
+                DropdownMenu(
+                    expanded = showDropDownMenu,
+                    onDismissRequest = { showDropDownMenu = false },
+                    modifier = Modifier.width(200.dp)
+                ) {
+                    userState?.let { user ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxWidth()
+                                .height(32.dp)
+                                .padding(bottom = 4.dp)
+                        ) {
+                            Text(text = user.wacsUsername)
+                        }
+
+                        HorizontalDivider()
                     }
 
-                    HorizontalDivider()
-                }
-
-                if (page != PageType.SETTINGS) {
-//                    DropdownMenuItem(
-//                        text = { Text(stringResource(Res.string.settings)) },
-//                        leadingIcon = {
-//                            Icon(
-//                                imageVector = Icons.Default.Settings,
-//                                contentDescription = null
-//                            )
-//                        },
-//                        onClick = {
-//                            showDropDownMenu = false
-//                            if (navigator.lastItem !is SettingsScreen) {
-//                                navigator.push(SettingsScreen(user))
-//                            }
-//                        }
-//                    )
-                }
-
-                actionsState.forEach {
                     DropdownMenuItem(
-                        text = { Text(it.title) },
+                        text = { Text(stringResource(Res.string.settings)) },
                         leadingIcon = {
                             Icon(
-                                imageVector = it.icon,
+                                imageVector = Icons.Default.Settings,
                                 contentDescription = null
                             )
                         },
                         onClick = {
                             showDropDownMenu = false
-                            it.onClick()
+                            if (navigator.lastItem !is SettingsScreen) {
+                                navigator.push(SettingsScreen(userState))
+                            }
                         }
                     )
+
+                    actionsState.forEach {
+                        DropdownMenuItem(
+                            text = { Text(it.title) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = it.icon,
+                                    contentDescription = null
+                                )
+                            },
+                            onClick = {
+                                showDropDownMenu = false
+                                it.onClick()
+                            }
+                        )
+                    }
                 }
             }
         }

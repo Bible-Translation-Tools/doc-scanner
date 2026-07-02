@@ -34,6 +34,8 @@ import platform.QuickLook.QLPreviewControllerDataSourceProtocol
 import platform.QuickLook.QLPreviewItemProtocol
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
+import platform.UIKit.UIDocumentPickerDelegateProtocol
+import platform.UIKit.UIDocumentPickerViewController
 import platform.UIKit.UIGraphicsBeginPDFContextToData
 import platform.UIKit.UIGraphicsBeginPDFPageWithInfo
 import platform.UIKit.UIGraphicsEndPDFContext
@@ -241,6 +243,73 @@ actual fun rememberFileSharer(): FileSharer {
                 val controller = QLPreviewController()
                 controller.dataSource = source
                 topViewController()?.presentViewController(controller, animated = true, completion = null)
+            }
+        }
+    }
+}
+
+// ---- File picker (UIDocumentPickerViewController) ----
+
+private var retainedDocumentPickerDelegate: NSObject? = null
+
+private class DocumentPickerDelegate(
+    private val directoryProvider: DirectoryProvider,
+    private val onResult: (Path?) -> Unit
+) : NSObject(), UIDocumentPickerDelegateProtocol {
+
+    override fun documentPicker(
+        controller: UIDocumentPickerViewController,
+        didPickDocumentsAtURLs: List<*>
+    ) {
+        val url = didPickDocumentsAtURLs.firstOrNull() as? NSURL
+        val path = url?.let { copyUrlToCache(it, directoryProvider) }
+        retainedDocumentPickerDelegate = null
+        onResult(path)
+    }
+
+    override fun documentPickerWasCancelled(controller: UIDocumentPickerViewController) {
+        retainedDocumentPickerDelegate = null
+        onResult(null)
+    }
+}
+
+private fun copyUrlToCache(url: NSURL, directoryProvider: DirectoryProvider): Path? {
+    return try {
+        val accessing = url.startAccessingSecurityScopedResource()
+        val data = try {
+            val path = url.path ?: return null
+            NSFileManager.defaultManager.contentsAtPath(path)
+        } finally {
+            if (accessing) url.stopAccessingSecurityScopedResource()
+        }
+        if (data == null) return null
+
+        val tempPath = directoryProvider.createTempFile("import", ".json")
+        writeNSData(data, tempPath)
+        tempPath
+    } catch (e: Exception) {
+        logger.error(e) { "Failed to copy picked file" }
+        null
+    }
+}
+
+@Composable
+actual fun rememberFilePicker(
+    directoryProvider: DirectoryProvider,
+    onResult: (Path?) -> Unit
+): FilePicker {
+    return remember(directoryProvider) {
+        object : FilePicker {
+            override fun launch() {
+                val delegate = DocumentPickerDelegate(directoryProvider, onResult)
+                retainedDocumentPickerDelegate = delegate
+                @Suppress("DEPRECATION")
+                val picker = UIDocumentPickerViewController(
+                    documentTypes = listOf("public.json"),
+                    inMode = platform.UIKit.UIDocumentPickerMode.UIDocumentPickerModeImport
+                )
+                picker.delegate = delegate
+                topViewController()?.presentViewController(picker, animated = true, completion = null)
             }
         }
     }

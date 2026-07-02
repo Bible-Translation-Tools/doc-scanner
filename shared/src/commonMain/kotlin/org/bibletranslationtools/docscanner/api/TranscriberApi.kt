@@ -9,6 +9,7 @@ import io.ktor.client.plugins.UserAgent
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.cookies.HttpCookies
 import io.ktor.client.request.forms.submitForm
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -19,6 +20,7 @@ import kotlinx.serialization.Serializable
 import org.bibletranslationtools.docscanner.api.TranscriberApi.Companion.DEFAULT_PROMPT
 import org.bibletranslationtools.docscanner.api.TranscriberApi.Companion.DEFAULT_SYSTEM_PROMPT
 import org.bibletranslationtools.docscanner.data.JsonLenient
+import org.bibletranslationtools.docscanner.data.models.Language
 import org.bibletranslationtools.docscanner.data.repository.PreferenceRepository
 
 typealias SyncData = Map<String, SyncItem>
@@ -34,7 +36,8 @@ data class ImageRequest(
     val model: String = Model.OPENAI.value,
     val prompt: String = DEFAULT_PROMPT,
     val systemPrompt: String = DEFAULT_SYSTEM_PROMPT,
-    val created: Long
+    val created: Long,
+    val processImmediately: Boolean
 )
 
 @Serializable
@@ -101,7 +104,7 @@ class TranscriberApi(preferenceRepository: PreferenceRepository) {
             )
         }
         install(UserAgent) {
-            agent = "btt-doc-scanner" //"btt-writer-android"
+            agent = "btt-writer-android" //"btt-doc-scanner"
         }
     }
 
@@ -149,10 +152,15 @@ class TranscriberApi(preferenceRepository: PreferenceRepository) {
         }
     }
 
+    suspend fun fetchLanguages(): List<Language> {
+        return client.get(LANGNAMES_URL).body()
+    }
+
     internal companion object {
         const val BASE_URL = "https://transcriber.wycliffe-associates-account.workers.dev"
         const val BASE_API_URL = "$BASE_URL/api/v1"
         const val DEFAULT_PROMPT = "Carefully read the text in this image and provide only the transcription in the 'transcription' field of the JSON response."
         const val DEFAULT_SYSTEM_PROMPT = "You are an expert at reading and transcribing text from images (including handwriting, print, and mixed languages). You must return a JSON object with exactly one key, 'transcription', whose value is the transcribed text from the image. Preserve the original language(s), numbers, punctuation, and line breaks as much as possible. Do not add explanations, labels, or metadata. If a small part is unreadable, skip or approximate it rather than inventing new content. Output only valid JSON that matches the expected schema."
+        const val LANGNAMES_URL = "https://langnames.bibleineverylanguage.org/langnames.json"
     }
 }

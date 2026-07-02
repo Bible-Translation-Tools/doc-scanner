@@ -19,3 +19,4 @@ captures
 .fleet
 **/release/
 .claude/
+graphify-out/
